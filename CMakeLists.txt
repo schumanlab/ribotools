@@ -10,7 +10,7 @@ endif()
 
 project(ribotools VERSION 1.0.0 LANGUAGES CXX)
 set(SOURCE  ribotools.cpp
-            ArgParser.cpp ArgParser.h
+            Version.cpp Version.h
             BedRecord.cpp BedRecord.h
             MetaGeneMain.cpp MetaGene.cpp MetaGene.h)
 add_executable(${PROJECT_NAME} ${SOURCE})
