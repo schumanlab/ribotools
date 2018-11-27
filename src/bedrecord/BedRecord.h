@@ -1,5 +1,5 @@
-#ifndef BEDLINE_H
-#define BEDLINE_H
+#ifndef BEDRECORD_H
+#define BEDRECORD_H
 
 #include <string>
 #include <fstream>
@@ -7,10 +7,10 @@
 #include <vector>
 #include <set>
 
-class BedLine
+class BedRecord
 {
 public:
-    BedLine();
+    BedRecord();
 
     uint8_t strand;
     int32_t chromStart;
@@ -30,7 +30,7 @@ public:
     std::vector<int32_t> blockStarts;
 
     static void listToArray(std::vector<int32_t> &array, const std::string &list);
-    friend std::istream& operator>> (std::istream& in, BedLine &data);
+    friend std::istream& operator>> (std::istream& in, BedRecord &data);
     void parseExons();
     bool toLinear(int32_t &readOffset, int32_t readStart);
 
@@ -53,7 +53,7 @@ private:
 
     std::set<ExonNode, ExonCompare> m_exonTree;
     
-    void swap(BedLine &other);
+    void swap(BedRecord &other);
 };
 
 #endif /* BEDLINE_H */

@@ -11,7 +11,7 @@
 #include <htslib/kseq.h>
 #include <htslib/khash.h>
 
-#include "BedLine.h"
+#include "BedRecord.h"
 
 class MetaGene
 {

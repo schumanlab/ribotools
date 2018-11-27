@@ -80,7 +80,7 @@ void MetaGene::pileup()
     {
         // parse bed line
         auto ssline = std::stringstream(line.s);
-        auto bed = BedLine();
+        auto bed = BedRecord();
         ssline >> bed;
 
         // parse exons

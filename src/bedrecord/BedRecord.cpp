@@ -1,6 +1,6 @@
-#include "BedLine.h"
+#include "BedRecord.h"
 
-BedLine::BedLine() :
+BedRecord::BedRecord() :
     strand(0),
     chromStart(0),
     chromEnd(0),
@@ -19,7 +19,7 @@ BedLine::BedLine() :
 }
 
 
-void BedLine::swap(BedLine &other)
+void BedRecord::swap(BedRecord &other)
 {
     std::swap(chrom, other.chrom);
     std::swap(chromStart, other.chromStart);
@@ -35,7 +35,7 @@ void BedLine::swap(BedLine &other)
     std::swap(blockStarts, other.blockStarts);
 }
 
-void BedLine::listToArray(std::vector<int32_t> &array, const std::string &list)
+void BedRecord::listToArray(std::vector<int32_t> &array, const std::string &list)
 {
     std::stringstream ss(list);
     int32_t value;
@@ -48,9 +48,9 @@ void BedLine::listToArray(std::vector<int32_t> &array, const std::string &list)
 }
 
 
-std::istream& operator>> (std::istream& in, BedLine &data)
+std::istream& operator>> (std::istream& in, BedRecord &data)
 {
-    BedLine temp;
+    BedRecord temp;
     std::string tempBlockSizes;
     std::string tempBlockStarts;
     if ((in >> temp.chrom) &&
@@ -66,15 +66,15 @@ std::istream& operator>> (std::istream& in, BedLine &data)
         (in >> tempBlockSizes) &&
         (in >> tempBlockStarts))
     {
-        BedLine::listToArray(temp.blockSizes, tempBlockSizes);
-        BedLine::listToArray(temp.blockStarts, tempBlockStarts);
+        BedRecord::listToArray(temp.blockSizes, tempBlockSizes);
+        BedRecord::listToArray(temp.blockStarts, tempBlockStarts);
         data.swap(temp);
     }
     return in;
 }
 
 
-void BedLine::parseExons()
+void BedRecord::parseExons()
 {
     for (int32_t k = 0; k < blocks; k++)
     {
@@ -100,7 +100,7 @@ void BedLine::parseExons()
 }
 
 
-bool BedLine::toLinear(int32_t &readOffset, int32_t readStart)
+bool BedRecord::toLinear(int32_t &readOffset, int32_t readStart)
 {
     bool found = false;
     ExonNode query = {readStart, readStart, 0};

@@ -1,0 +1,24 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/tushevg/Desktop/neuroribotools/src/bedrecord/BedRecord.cpp
+BedRecord.h
+/Users/tushevg/Desktop/neuroribotools/src/bedrecord/BedRecord.h
+
+/Users/tushevg/Desktop/neuroribotools/src/bedrecord/BedRecord.h
+string
+-
+fstream
+-
+sstream
+-
+vector
+-
+set
+-
+

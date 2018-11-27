@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/Users/tushevg/Desktop/neuroribotools/src/ArgParser.cpp
+ArgParser.h
+/Users/tushevg/Desktop/neuroribotools/src/ArgParser.h
+
+/Users/tushevg/Desktop/neuroribotools/src/ArgParser.h
+iostream
+-
+

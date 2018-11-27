@@ -111,44 +111,56 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named neuroribotools
+# Target rules for targets named main
 
 # Build rule for target.
-neuroribotools: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 neuroribotools
-.PHONY : neuroribotools
+main: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 main
+.PHONY : main
 
 # fast build rule for target.
-neuroribotools/fast:
-	$(MAKE) -f CMakeFiles/neuroribotools.dir/build.make CMakeFiles/neuroribotools.dir/build
-.PHONY : neuroribotools/fast
+main/fast:
+	$(MAKE) -f src/CMakeFiles/main.dir/build.make src/CMakeFiles/main.dir/build
+.PHONY : main/fast
 
-neuroribotools.o: neuroribotools.cpp.o
+#=============================================================================
+# Target rules for targets named argparser
 
-.PHONY : neuroribotools.o
+# Build rule for target.
+argparser: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 argparser
+.PHONY : argparser
 
-# target to build an object file
-neuroribotools.cpp.o:
-	$(MAKE) -f CMakeFiles/neuroribotools.dir/build.make CMakeFiles/neuroribotools.dir/neuroribotools.cpp.o
-.PHONY : neuroribotools.cpp.o
+# fast build rule for target.
+argparser/fast:
+	$(MAKE) -f src/argparser/CMakeFiles/argparser.dir/build.make src/argparser/CMakeFiles/argparser.dir/build
+.PHONY : argparser/fast
 
-neuroribotools.i: neuroribotools.cpp.i
+#=============================================================================
+# Target rules for targets named bedrecord
 
-.PHONY : neuroribotools.i
+# Build rule for target.
+bedrecord: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 bedrecord
+.PHONY : bedrecord
 
-# target to preprocess a source file
-neuroribotools.cpp.i:
-	$(MAKE) -f CMakeFiles/neuroribotools.dir/build.make CMakeFiles/neuroribotools.dir/neuroribotools.cpp.i
-.PHONY : neuroribotools.cpp.i
+# fast build rule for target.
+bedrecord/fast:
+	$(MAKE) -f src/bedrecord/CMakeFiles/bedrecord.dir/build.make src/bedrecord/CMakeFiles/bedrecord.dir/build
+.PHONY : bedrecord/fast
 
-neuroribotools.s: neuroribotools.cpp.s
+#=============================================================================
+# Target rules for targets named metagene
 
-.PHONY : neuroribotools.s
+# Build rule for target.
+metagene: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 metagene
+.PHONY : metagene
 
-# target to generate assembly for a file
-neuroribotools.cpp.s:
-	$(MAKE) -f CMakeFiles/neuroribotools.dir/build.make CMakeFiles/neuroribotools.dir/neuroribotools.cpp.s
-.PHONY : neuroribotools.cpp.s
+# fast build rule for target.
+metagene/fast:
+	$(MAKE) -f src/metagene/CMakeFiles/metagene.dir/build.make src/metagene/CMakeFiles/metagene.dir/build
+.PHONY : metagene/fast
 
 # Help Target
 help:
@@ -158,10 +170,10 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
-	@echo "... neuroribotools"
-	@echo "... neuroribotools.o"
-	@echo "... neuroribotools.i"
-	@echo "... neuroribotools.s"
+	@echo "... main"
+	@echo "... argparser"
+	@echo "... bedrecord"
+	@echo "... metagene"
 .PHONY : help
 
 
