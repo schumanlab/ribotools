@@ -1,2 +1,0 @@
-/usr/bin/ar qc libmetagene.a  CMakeFiles/metagene.dir/MetaGeneMain.cpp.o CMakeFiles/metagene.dir/MetaGene.cpp.o
-/usr/bin/ranlib libmetagene.a

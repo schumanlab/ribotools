@@ -1,5 +1,5 @@
 # build
-build
+build/
 
 # mac os x
 .DS_Store

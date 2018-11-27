@@ -1,2 +1,0 @@
-/usr/bin/ar qc libbedrecord.a  CMakeFiles/bedrecord.dir/BedRecord.cpp.o
-/usr/bin/ranlib libbedrecord.a
