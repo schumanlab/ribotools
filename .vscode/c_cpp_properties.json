@@ -6,6 +6,11 @@
                 "${workspaceFolder}/**"
             ],
             "defines": [],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/**"
+                ]
+            },
             "macFrameworkPath": [
                 "/System/Library/Frameworks",
                 "/Library/Frameworks"
@@ -14,8 +19,7 @@
             "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "clang-x64",
-            "configurationProvider": "vector-of-bool.cmake-tools",
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json"
+            "configurationProvider": "vector-of-bool.cmake-tools"
         }
     ],
     "version": 4

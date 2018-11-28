@@ -1,4 +1,4 @@
-#include "Version.h"
+#include "version.h"
 
 int version(const std::string &PROGRAM_NAME)
 {

@@ -1,4 +1,4 @@
-#include "MetaGene.h"
+#include "metagene.h"
 
 MetaGene::MetaGene() :
     m_fhBed(nullptr),

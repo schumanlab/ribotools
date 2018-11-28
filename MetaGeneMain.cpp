@@ -1,6 +1,6 @@
 #include <iostream>
-#include "Version.h"
-#include "MetaGene.h"
+#include "version.h"
+#include "metagene.h"
 
 
 int help_metagene(void);

@@ -1,4 +1,4 @@
-#include "BedRecord.h"
+#include "bedrecord.h"
 
 BedRecord::BedRecord() :
     strand(0),

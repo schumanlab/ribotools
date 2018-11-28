@@ -1,5 +1,5 @@
 #include <iostream>
-#include "Version.h"
+#include "version.h"
 
 int help_ribotools(void);
 int error_ribotools(const std::string &message);
