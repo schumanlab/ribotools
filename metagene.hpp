@@ -11,7 +11,9 @@
 #include <htslib/kseq.h>
 #include <htslib/khash.h>
 
-#include "bedrecord.h"
+#include "argparse.hpp"
+#include "bedrecord.hpp"
+#include "version.hpp"
 
 class MetaGene
 {
@@ -19,20 +21,19 @@ public:
     MetaGene();
     ~MetaGene();
 
-    void open(const std::string &fileBed, const std::string &fileBam);
-    void pileup();
-
+    bool parse(int argc, char const *argv[]);
+    
 private:
-    BGZF *m_fhBed;
-    samFile *m_fhBam;
-    hts_idx_t *m_fhBai;
-    bam_hdr_t *m_header;
-    bam1_t *m_bam;
+    int m_nbins;
+    float m_depth;
+    float m_boundLower;
+    float m_boundUpper;
+    std::string m_fileBed;
+    std::vector<std::string> m_filesGbed;
 
-    KHASH_MAP_INIT_INT(32, uint32_t);
-
+    void help();
     void error(const std::string &errorMessage);
-    static inline uint32_t bam_calqlen(const bam1_core_t *core, const uint32_t *cigar);
+    
 };
 
 #endif /* METAGENE_H */

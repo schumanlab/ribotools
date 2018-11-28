@@ -10,9 +10,10 @@ endif()
 
 project(ribotools VERSION 1.0.0 LANGUAGES CXX)
 set(SOURCE  ribotools.cpp
-            version.cpp version.h
-            bedrecord.cpp bedrecord.h
-            metageneMain.cpp metagene.cpp metagene.h)
+            version.cpp version.hpp
+            argparse.hpp
+            bedrecord.cpp bedrecord.hpp
+            metagene.cpp metagene.hpp)
 add_executable(${PROJECT_NAME} ${SOURCE})
 
 find_package(PkgConfig REQUIRED)
