@@ -28,6 +28,7 @@ int main(int argc, char const *argv[])
         auto obj = MetaGene();
         if(!obj.parse(argc - 1, argv + 1))
             return 0;
+        obj.pileup();
 
         
     }

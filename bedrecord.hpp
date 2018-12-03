@@ -13,10 +13,10 @@ public:
     BedRecord();
 
     uint8_t strand;
-    int32_t chromStart;
-    int32_t chromEnd;
-    int32_t thickStart;
-    int32_t thickEnd;
+    uint32_t chromStart;
+    uint32_t chromEnd;
+    uint32_t thickStart;
+    uint32_t thickEnd;
     int32_t score;
     int32_t blocks;
     int32_t cdsStart;
@@ -26,10 +26,10 @@ public:
     std::string chrom;
     std::string name;
     std::string itemRgb;
-    std::vector<int32_t> blockSizes;
-    std::vector<int32_t> blockStarts;
+    std::vector<uint32_t> blockSizes;
+    std::vector<uint32_t> blockStarts;
 
-    static void listToArray(std::vector<int32_t> &array, const std::string &list);
+    static void listToArray(std::vector<uint32_t> &array, const std::string &list);
     friend std::istream& operator>> (std::istream& in, BedRecord &data);
     void parseExons();
     bool toLinear(int32_t &readOffset, int32_t readStart);

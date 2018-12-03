@@ -12,7 +12,29 @@ MetaGene::MetaGene() :
 
 MetaGene::~MetaGene()
 {
-    
+    if (m_fhBed != nullptr)
+    {
+        if (bgzf_close(m_fhBed) != 0)
+            error("failed to close BED file");
+    }
+
+    for (auto const &fhGbed: m_fhGbed)
+    {
+        if (fhGbed != nullptr)
+        {
+            if (bgzf_close(fhGbed) != 0)
+                error("failed to close GBED file");
+        }
+    }
+
+    for (auto const &fhTabix: m_fhTabix)
+    {
+        if (fhTabix != nullptr)
+        {
+            regidx_destroy(fhTabix);
+        }
+    }
+
 }
 
 
@@ -30,92 +52,11 @@ bool MetaGene::parse(int argc, char const *argv[])
     parser.addArgument("d", "--depth", 1);
     parser.appName("ribotools metagene");
     parser.ignoreFirstArgument(true);
-    std::cout << parser.usage() << std::endl;
     parser.parse(argc, argv);
 
     m_fileBed = parser.retrieve<std::string>("bed");
-    std::cout << m_fileBed << std::endl;
+    m_filesGbed = parser.retrieve<std::vector<std::string>>("gbed");
 
-    /*
-    if (argc < 2)
-    {
-        help();
-        return false;
-    }
-    
-    int a = 1;
-    while (a < argc)
-    {
-        // get current argument key
-        std::string argumentKey(argv[a]);
-        a++;
-        std::cout << argumentKey << std::endl;
-
-        
-        // check if is a help / version / contact
-        if ((argumentKey == "-h") || (argumentKey == "--help"))
-        {
-            help();
-            return false;
-        }
-        else if((argumentKey == "-v") || (argumentKey == "--version"))
-        {
-            version("ribotools metagene ");
-            return false;
-        }
-        else if((argumentKey == "-c") || (argumentKey == "--contact"))
-        {
-            contact();
-            return false;
-        }
-
-        // get value to current key
-        a++;
-        if (a >= argc)
-        {
-            error("missing value for argument " + argumentKey);
-            return false;
-        }
-        std::string argumentValue(argv[a]);
-
-        // add single key-value pairs
-        if ((argumentKey == "-a") || (argumentKey == "--bed"))
-        {
-            m_fileBed = argumentValue;
-        }
-        else if ((argumentKey == "-n") || (argumentKey == "--nbins"))
-        {
-            m_nbins = std::stoi(argumentValue);
-        }
-        else if ((argumentKey == "-l") || (argumentKey == "--lower"))
-        {
-            m_boundLower = std::stof(argumentValue);
-        }
-        else if ((argumentKey == "-u") || (argumentKey == "--upper"))
-        {
-            m_boundUpper = std::stof(argumentValue);
-        }
-        else if ((argumentKey == "-d") || (argumentKey == "--depth"))
-        {
-            m_depth = std::stof(argumentValue);
-        }
-        else if ((argumentKey == "-g") || (argumentKey == "--gbeds"))
-        {
-            m_filesGbed.push_back(argumentValue);
-            while (++a < argc)
-            {
-                std::string argumentNext(argv[a]);
-                if (argumentNext.at(0) == '-')
-                {
-                    a--;
-                    break;
-                }
-                m_filesGbed.push_back(argumentNext);
-            }
-        }
-        
-    }
-    */
 
     return true;
 }
@@ -151,4 +92,120 @@ void MetaGene::error(const std::string &errorMessage)
 {
     std::cerr << "ribotools metagene" << std::endl;
     std::cerr << '\t' << "Error:: " << errorMessage << std::endl;
+}
+
+
+void MetaGene::open()
+{
+    // open annotation file
+    m_fhBed = bgzf_open(m_fileBed.c_str(), "r");
+    if (!m_fhBed)
+    {
+        error("failed to open BED file " + m_fileBed);
+        return;
+    }
+
+    // open coverage files
+    for (auto const &fileGbed: m_filesGbed)
+    {
+        // GBED file
+        BGZF *fhGbed = bgzf_open(fileGbed.c_str(), "r");
+        if (fhGbed == nullptr)
+        {
+            error("failed to open GBED file " + fileGbed);
+            return;
+        }
+        m_fhGbed.push_back(fhGbed);
+
+        // TABIX file
+        regidx_t *fhTabix = regidx_init(fileGbed.c_str(), MetaGene::tabixParse, MetaGene::tabixFree, sizeof(char*), NULL);
+        if (fhTabix == nullptr)
+        {
+            error("failed to open GBED index file " + fileGbed);
+            return;
+        }
+        m_fhTabix.push_back(fhTabix);
+    }
+
+}
+
+
+void MetaGene::pileup()
+{
+    open();
+    
+    readBed();
+}
+
+
+int MetaGene::tabixParse(const char *line, char **chr_beg, char **chr_end, reg_t *reg, void *payload, void *usr)
+{
+    // Use the standard parser for CHROM,FROM,TO
+    int i, ret = regidx_parse_tab(line,chr_beg,chr_end,reg,NULL,NULL);
+    if ( ret!=0 ) return ret;
+
+    // Skip the fields that were parsed above
+    char *ss = (char*) line;
+    while ( *ss && isspace(*ss) ) ss++;
+    for (i=0; i<3; i++)
+    {
+        while ( *ss && !isspace(*ss) ) ss++;
+        if ( !*ss ) return -2;  // wrong number of fields
+        while ( *ss && isspace(*ss) ) ss++;
+    }
+    if ( !*ss ) return -2;
+
+    // Parse the payload
+    char *se = ss;
+    while ( *se && !isspace(*se) ) se++;
+    char **dat = (char**) payload;
+    *dat = (char*) malloc(se-ss+1);
+    memcpy(*dat,ss,se-ss+1);
+    (*dat)[se-ss] = 0;
+    return 0;
+}
+
+
+void MetaGene::tabixFree(void *payload)
+{
+    char **dat = (char**)payload;
+    free(*dat);
+}
+
+void MetaGene::readBed()
+{
+    kstring_t str = {0, 0, NULL};
+    uint32_t counterLines = 0;
+
+    while (bgzf_getline(m_fhBed, '\n', &str) > 0)
+    {
+        auto ss = std::stringstream(str.s);
+        auto bed = BedRecord();
+        ss >> bed;
+        bed.parseExons();
+        counterLines++;
+
+        queryBed(bed);
+        break;
+
+    }
+    free(ks_release(&str));
+    std::cout << "Annotation records: " << counterLines << std::endl;
+}
+
+
+void MetaGene::queryBed(const BedRecord &bed)
+{
+    regitr_t tabixIterator;
+    if (regidx_overlap(m_fhTabix.at(0), bed.chrom.c_str(), bed.chromStart, bed.chromEnd, &tabixIterator))
+    {
+        while (REGITR_OVERLAP(tabixIterator, bed.chromStart, bed.chromEnd))
+        {
+            std::cout << REGITR_START(tabixIterator) << " " << REGITR_END(tabixIterator) << " " << REGITR_PAYLOAD(tabixIterator, char*) << std::endl;
+            tabixIterator.i++;
+        }
+        
+    }
+
+    
 }

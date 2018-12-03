@@ -35,10 +35,10 @@ void BedRecord::swap(BedRecord &other)
     std::swap(blockStarts, other.blockStarts);
 }
 
-void BedRecord::listToArray(std::vector<int32_t> &array, const std::string &list)
+void BedRecord::listToArray(std::vector<uint32_t> &array, const std::string &list)
 {
     std::stringstream ss(list);
-    int32_t value;
+    uint32_t value;
     while (ss >> value)
     {
         array.push_back(value);
