@@ -18,6 +18,7 @@ MetaGene::~MetaGene()
             error("failed to close BED file");
     }
 
+    /*
     for (auto const &fhGbed: m_fhGbed)
     {
         if (fhGbed != nullptr)
@@ -34,6 +35,7 @@ MetaGene::~MetaGene()
             regidx_destroy(fhTabix);
         }
     }
+    */
 
 }
 
@@ -105,6 +107,23 @@ void MetaGene::open()
         return;
     }
 
+    BGZF *fh = bgzf_open(m_filesGbed.at(0).c_str(), "r");
+    if (fh == nullptr)
+    {
+        error("failed to open GBED file " + m_filesGbed.at(0));
+        return;
+    }
+    bgzf_close(fh);
+
+    regidx_t * fhx = regidx_init(m_filesGbed.at(0).c_str(), MetaGene::tabixParse, MetaGene::tabixFree, sizeof(char*), NULL);
+    if (fhx == nullptr)
+    {
+        error("failed to open GBED index file ");
+        return;
+    }
+    regidx_destroy(fhx);
+
+/*
     // open coverage files
     for (auto const &fileGbed: m_filesGbed)
     {
@@ -126,6 +145,7 @@ void MetaGene::open()
         }
         m_fhTabix.push_back(fhTabix);
     }
+*/
 
 }
 
@@ -134,7 +154,7 @@ void MetaGene::pileup()
 {
     open();
     
-    readBed();
+    //readBed();
 }
 
 
@@ -197,6 +217,9 @@ void MetaGene::readBed()
 void MetaGene::queryBed(const BedRecord &bed)
 {
     regitr_t tabixIterator;
+
+    std::cout << bed.chrom << ":" << bed.chromStart << "-" << bed.chromEnd << std::endl;
+
     if (regidx_overlap(m_fhTabix.at(0), bed.chrom.c_str(), bed.chromStart, bed.chromEnd, &tabixIterator))
     {
         while (REGITR_OVERLAP(tabixIterator, bed.chromStart, bed.chromEnd))
@@ -205,6 +228,10 @@ void MetaGene::queryBed(const BedRecord &bed)
             tabixIterator.i++;
         }
         
+    }
+    else
+    {
+        std::cout << "nohit" << std::endl;
     }
 
     

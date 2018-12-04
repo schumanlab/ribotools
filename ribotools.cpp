@@ -7,6 +7,14 @@ int help(void);
 
 int main(int argc, char const *argv[])
 {
+    std::string fileName = "/Users/tushevg/Desktop/RiboData/gbed/MonoVsPoly/Total_01.gbed.gz";
+
+    //BGZF *fh = 
+
+
+
+
+    /*
     // check for sub-command
     if (argc < 2) 
         return help();
@@ -39,6 +47,7 @@ int main(int argc, char const *argv[])
         std::cerr << std::endl;
         return help();
     }
+    */
 
     return 0;
 }
