@@ -21,6 +21,10 @@ public:
     bool parse(int argc, char const *argv[]);
     void pileup();
     
+    static int tabixParse(const char *line, char **chr_beg, char **chr_end, reg_t *reg, void *payload, void *usr);
+    static void tabixFree(void *payload);
+
+
 private:
     int m_nbins;
     float m_depth;
@@ -33,9 +37,7 @@ private:
     std::vector<BGZF *> m_fhGbed;
     std::vector<regidx_t *> m_fhTabix;
 
-    static int tabixParse(const char *line, char **chr_beg, char **chr_end, reg_t *reg, void *payload, void *usr);
-    static void tabixFree(void *payload);
-
+    
 
     void open();
     void readBed();

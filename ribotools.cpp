@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include <chrono>
+
 #include "version.hpp"
 #include "metagene.hpp"
 
@@ -9,9 +11,18 @@ int main(int argc, char const *argv[])
 {
     std::string fileName = "/Users/tushevg/Desktop/RiboData/gbed/MonoVsPoly/Total_01.gbed.gz";
 
-    //BGZF *fh = 
+    auto tic = std::chrono::high_resolution_clock::now();
 
 
+    //BGZF *fh = bgzf_open(fileName.c_str(), "r");
+    //bgzf_close(fh); 
+
+    regidx_t *fh = regidx_init(fileName.c_str(), MetaGene::tabixParse, MetaGene::tabixFree, sizeof(char *), NULL);
+    regidx_destroy(fh);
+
+    auto toc = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = toc - tic;
+    std::cout << "Elapsed time: " << elapsed.count() << " s.\n";
 
 
     /*
