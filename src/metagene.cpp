@@ -42,24 +42,6 @@ MetaGene::~MetaGene()
 
 bool MetaGene::parse(int argc, char const *argv[])
 {
-    auto parser = ArgumentParser();
-    parser.addArgument("-h", "--help", 0);
-    parser.addArgument("-v", "--version", 0);
-    parser.addArgument("-c", "--contact", 0);
-    parser.addArgument("-a", "--bed", 1);
-    parser.addArgument("-g", "--gbed", '+');
-    parser.addArgument("-n", "--nbins", 1);
-    parser.addArgument("-l", "--lower", 1);
-    parser.addArgument("-u", "--upper", 1);
-    parser.addArgument("d", "--depth", 1);
-    parser.appName("ribotools metagene");
-    parser.ignoreFirstArgument(true);
-    parser.parse(argc, argv);
-
-    m_fileBed = parser.retrieve<std::string>("bed");
-    m_filesGbed = parser.retrieve<std::vector<std::string>>("gbed");
-
-
     return true;
 }
 

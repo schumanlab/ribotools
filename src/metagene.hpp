@@ -8,7 +8,6 @@
 #include <htslib/regidx.h>
 #include <htslib/kstring.h>
 
-#include "argparse.hpp"
 #include "bedrecord.hpp"
 #include "version.hpp"
 
