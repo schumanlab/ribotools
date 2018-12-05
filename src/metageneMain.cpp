@@ -1,4 +1,12 @@
-#include "metagene.hpp"
+#include <iostream>
+#include <string>
+#include <vector>
+#include <sstream>
+#include <chrono>
+
+#include "version.hpp"
+#include "parserbed.hpp"
+#include "bedrecord.hpp"
 
 class MetaGeneConfig
 {
@@ -20,8 +28,23 @@ public:
 int metageneMain(int argc, char const *argv[])
 {
     auto config = MetaGeneConfig(argc, argv);
+    auto parser = ParserBed(config.fileBed);
 
-    std::cout << config.filesGbed.size() << std::endl;
+    auto tic = std::chrono::high_resolution_clock::now();
+    int lines = 0;
+    while (parser.next() > 0)
+    {
+        auto ss = std::stringstream(parser.buffer.s);
+        auto bed = BedRecord();
+        ss >> bed;
+        //std::cout << bed.name << std::endl;
+        lines++;
+    }
+
+    auto toc = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> elapsed = toc - tic;
+    std::cout << "ribotools metagene " << elapsed.count() << " s.\n";
+    std::cout << "BEDLINES: " << lines << std::endl;
 
     return 0;
 }

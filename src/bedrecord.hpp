@@ -1,9 +1,8 @@
 #ifndef BEDRECORD_H
 #define BEDRECORD_H
 
-#include <string>
-#include <fstream>
 #include <sstream>
+#include <string>
 #include <vector>
 #include <set>
 
@@ -17,12 +16,12 @@ public:
     uint32_t chromEnd;
     uint32_t thickStart;
     uint32_t thickEnd;
-    int32_t score;
-    int32_t blocks;
-    int32_t cdsStart;
-    int32_t cdsEnd;
-    int32_t cdsSpan;
-    int32_t span;
+    uint32_t score;
+    uint32_t blocks;
+    uint32_t cdsStart;
+    uint32_t cdsEnd;
+    uint32_t cdsSpan;
+    uint32_t span;
     std::string chrom;
     std::string name;
     std::string itemRgb;
@@ -32,14 +31,14 @@ public:
     static void listToArray(std::vector<uint32_t> &array, const std::string &list);
     friend std::istream& operator>> (std::istream& in, BedRecord &data);
     void parseExons();
-    bool toLinear(int32_t &readOffset, int32_t readStart);
+    bool toLinear(uint32_t &readOffset, uint32_t readStart);
 
 private:
     struct ExonNode
     {
-        int32_t exonStart;
-        int32_t exonEnd;
-        int32_t offset;
+        uint32_t exonStart;
+        uint32_t exonEnd;
+        uint32_t offset;
     };
     
     struct ExonCompare

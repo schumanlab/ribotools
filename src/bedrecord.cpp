@@ -15,7 +15,7 @@ BedRecord::BedRecord() :
     name(""),
     itemRgb("")
 {
-
+    
 }
 
 
@@ -76,10 +76,10 @@ std::istream& operator>> (std::istream& in, BedRecord &data)
 
 void BedRecord::parseExons()
 {
-    for (int32_t k = 0; k < blocks; k++)
+    for (uint32_t k = 0; k < blocks; k++)
     {
-        int32_t exonStart = chromStart + blockStarts[k];
-        int32_t exonEnd = exonStart + blockSizes[k];
+        uint32_t exonStart = chromStart + blockStarts[k];
+        uint32_t exonEnd = exonStart + blockSizes[k];
         ExonNode exon = {exonStart, exonEnd, span};
         m_exonTree.insert(exon);
 
@@ -100,7 +100,7 @@ void BedRecord::parseExons()
 }
 
 
-bool BedRecord::toLinear(int32_t &readOffset, int32_t readStart)
+bool BedRecord::toLinear(uint32_t &readOffset, uint32_t readStart)
 {
     bool found = false;
     ExonNode query = {readStart, readStart, 0};
