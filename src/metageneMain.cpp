@@ -7,6 +7,7 @@
 #include "version.hpp"
 #include "parserbed.hpp"
 #include "bedrecord.hpp"
+#include "metagene.hpp"
 
 class MetaGeneConfig
 {
@@ -27,10 +28,18 @@ public:
 
 int metageneMain(int argc, char const *argv[])
 {
+    auto tic = std::chrono::high_resolution_clock::now();
     auto config = MetaGeneConfig(argc, argv);
     auto parser = ParserBed(config.fileBed);
 
-    auto tic = std::chrono::high_resolution_clock::now();
+    std::vector<MetaGene> listMeta;
+    for(const auto file : config.filesGbed)
+    {
+        auto meta = MetaGene(file);
+        listMeta.push_back(meta);
+    }
+
+    
     int lines = 0;
     while (parser.next() > 0)
     {

@@ -2,49 +2,27 @@
 #define METAGENE_H
 
 #include <iostream>
-#include <sstream>
+#include <vector>
 
-#include <htslib/bgzf.h>
-#include <htslib/regidx.h>
+#include <htslib/hts.h>
+#include <htslib/tbx.h>
 #include <htslib/kstring.h>
 
 #include "bedrecord.hpp"
-#include "version.hpp"
 
 class MetaGene
 {
 public:
-    MetaGene();
+    MetaGene(const std::string &file);
     ~MetaGene();
 
-    bool parse(int argc, char const *argv[]);
-    void pileup();
-    
-    static int tabixParse(const char *line, char **chr_beg, char **chr_end, reg_t *reg, void *payload, void *usr);
-    static void tabixFree(void *payload);
-
+    void parse(const BedRecord &bed);
 
 private:
-    int m_nbins;
-    float m_depth;
-    float m_boundLower;
-    float m_boundUpper;
-    std::string m_fileBed;
-    std::vector<std::string> m_filesGbed;
+    hts_itr_t *m_iterator;
+    htsFile * m_handleFile;
+    tbx_t * m_handleIndex;
 
-    BGZF *m_fhBed;
-    std::vector<BGZF *> m_fhGbed;
-    std::vector<regidx_t *> m_fhTabix;
-
-    
-
-    void open();
-    void readBed();
-    void queryBed(const BedRecord &bed);
-
-    void help();
-    void error(const std::string &errorMessage);
-    
 };
 
 #endif /* METAGENE_H */
