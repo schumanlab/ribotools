@@ -2,7 +2,7 @@ project(ribotools VERSION 1.0.0 LANGUAGES CXX)
 set(SOURCE  ribotools.cpp
             version.cpp version.hpp
             bedrecord.cpp bedrecord.hpp
-            metagene.cpp metagene.hpp)
+            metageneMain.cpp metagene.cpp metagene.hpp)
 add_executable(${PROJECT_NAME} ${SOURCE})
 
 find_package(PkgConfig REQUIRED)
