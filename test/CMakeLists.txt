@@ -1,5 +1,5 @@
 project(ribotoolsTests VERSION 1.0.0 LANGUAGES CXX)
-set(SOURCE  test_tabix.cpp)
+set(SOURCE  testMain.cpp test.cpp test.hpp)
 add_executable(${PROJECT_NAME} ${SOURCE})
 
 find_package(PkgConfig REQUIRED)
