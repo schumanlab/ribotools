@@ -6,8 +6,10 @@
 
 #include "version.hpp"
 #include "parserbed.hpp"
+#include "parsergbed.hpp"
 #include "bedrecord.hpp"
-#include "metagene.hpp"
+#include "gbedrecord.hpp"
+
 
 class MetaGeneConfig
 {
@@ -32,23 +34,55 @@ int metageneMain(int argc, char const *argv[])
     auto config = MetaGeneConfig(argc, argv);
     auto parser = ParserBed(config.fileBed);
 
-    std::vector<MetaGene> listMeta;
+    
+    std::vector<ParserGbed*> listGbed(config.filesGbed.size());
+    int i = 0;
     for(const auto file : config.filesGbed)
     {
-        auto meta = MetaGene(file);
-        listMeta.push_back(meta);
+        listGbed.at(i++) = new ParserGbed(file);
+    }
+    
+
+    int lines = 0;
+    std::string query = "chr18:56193977-56295869";
+    auto parserGbed = listGbed.at(0);
+
+    parserGbed->grab(query);
+
+    while (parserGbed->next() > 0)
+    {
+        //auto ss = std::stringstream(parserGbed->buffer.s);
+        //auto gbed = GbedRecord();
+        //ss >> gbed;
+        std::cout << parserGbed->buffer.s << std::endl;
+        lines++;
     }
 
     
-    int lines = 0;
+    
+    
+    /*
     while (parser.next() > 0)
     {
         auto ss = std::stringstream(parser.buffer.s);
         auto bed = BedRecord();
         ss >> bed;
-        //std::cout << bed.name << std::endl;
+
+        bed.parseExons();
+
+        std::string query = bed.chrom + ":" + std::to_string(bed.chromStart) + "-" + std::to_string(bed.chromEnd);
+        
+        
+        for (const auto gbed : listGbed)
+        {
+            
+        }
+        
+
         lines++;
     }
+    */
+    
 
     auto toc = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = toc - tic;

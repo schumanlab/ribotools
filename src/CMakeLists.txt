@@ -2,7 +2,9 @@ project(ribotools VERSION 1.0.0 LANGUAGES CXX)
 set(SOURCE  ribotools.cpp
             version.cpp version.hpp
             bedrecord.cpp bedrecord.hpp
+            gbedrecord.cpp gbedrecord.hpp
             parserbed.cpp parserbed.hpp
+            parsergbed.cpp parsergbed.hpp
             metageneMain.cpp metagene.cpp metagene.hpp)
 add_executable(${PROJECT_NAME} ${SOURCE})
 
