@@ -4,6 +4,7 @@
 #include <iostream>
 #include <htslib/hts.h>
 #include <htslib/kstring.h>
+#include <htslib/kseq.h>
 
 class ParserBed
 {

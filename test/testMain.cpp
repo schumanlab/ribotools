@@ -7,8 +7,12 @@
 int main(int argc, char const *argv[])
 {
     // test tabix
+    if (argc < 1)
+        return 0;
+
+    std::string fileName(argv[1]);
     auto tic = std::chrono::high_resolution_clock::now();
-    if (test_tabix() != 0)
+    if (test_tabix(fileName) != 0)
     {
         std::cerr << "TEST_TABIX: failed.";
         return 1;

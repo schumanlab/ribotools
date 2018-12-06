@@ -1,11 +1,12 @@
 #include "test.hpp"
 
-int test_tabix()
+int test_tabix(const std::string &fileName)
 {
-    std::string fileName = "/Users/tushevg/Desktop/RiboData/gbed/MonoVsPoly/Mono_01.gbed.gz";
     std::string query = "chr18:56193977-56295869";
 
-    htsFile *fp = hts_open(fileName.c_str(), "r");
+
+    //htsFile *fp = hts_open(fileName.c_str(), "r");
+    BGZF *fp = bgzf_open(fileName.c_str(), "r");
     if (!fp)
     {
         std::cerr << "TEST_TABIX::ERROR: could not read hts file." << std::endl;
@@ -27,17 +28,23 @@ int test_tabix()
         return 1;
     }
 
-    kstring_t str;
-    while (tbx_itr_next(fp, tbx, iter, &str) >= 0)
+    kstring_t str = {0, 0, 0};
+    int lines = 0;
+    //while (tbx_itr_next(fp, tbx, iter, &str) >= 0)
+    while (tbx_bgzf_itr_next(fp, tbx, iter, &str) >= 0)
     {
         std::string line(str.s);
-        //std::cout << "Line: " << line << std::endl;
+        //std::cout << line << std::endl;
         iter->i++;
+        lines++;
     }
+    std::cout << "LINES: " << lines << std::endl;
+
     
 
     free(ks_release(&str));
-    hts_close(fp);
+    //hts_close(fp);
+    bgzf_close(fp);
     tbx_itr_destroy(iter);
     tbx_destroy(tbx);
 

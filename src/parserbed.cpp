@@ -21,6 +21,6 @@ ParserBed::~ParserBed()
 
 int ParserBed::next()
 {
-    return hts_getline(m_fh, '\n', &buffer);
+    return hts_getline(m_fh, KS_SEP_LINE, &buffer);
 }
 
