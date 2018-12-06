@@ -1,23 +1,12 @@
 #include "parsergbed.hpp"
 
-ParserGbed::ParserGbed(const std::string &file) :
+ParserGbed::ParserGbed() :
+    buffer({0,0,0}),
     m_iterator(nullptr),
     m_handleFile(nullptr),
     m_handleIndex(nullptr)
 {
-    m_handleFile = hts_open(file.c_str(), "r");
-    if (!m_handleFile)
-    {
-        std::cerr << "MetaGene: could not open coverage file " << file << std::endl;
-        return;
-    }
-        
-    m_handleIndex = tbx_index_load(file.c_str());
-    if (!m_handleIndex)
-    {
-        std::cerr << "MetaGene: could not open index file " << file << ".bai" << std::endl;
-        return;
-    }
+    
 }
 
 
@@ -37,8 +26,27 @@ ParserGbed::~ParserGbed()
     {
         tbx_destroy(m_handleIndex);
     }
+    
+    free(ks_release(&buffer));
 }
 
+
+void ParserGbed::open(const std::string &file)
+{
+    m_handleFile = hts_open(file.c_str(), "r");
+    if (!m_handleFile)
+    {
+        std::cerr << "MetaGene: could not open coverage file " << file << std::endl;
+        return;
+    }
+        
+    m_handleIndex = tbx_index_load(file.c_str());
+    if (!m_handleIndex)
+    {
+        std::cerr << "MetaGene: could not open index file " << file << ".bai" << std::endl;
+        return;
+    }
+}
 
 int ParserGbed::grab(const std::string &query)
 {

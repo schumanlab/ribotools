@@ -2,7 +2,7 @@
 
 int test_tabix()
 {
-    std::string fileName = "/Users/tushevg/Desktop/RiboData/gbed/MonoVsPoly/Total_01.gbed.gz";
+    std::string fileName = "/Users/tushevg/Desktop/RiboData/gbed/MonoVsPoly/Mono_01.gbed.gz";
     std::string query = "chr18:56193977-56295869";
 
     htsFile *fp = hts_open(fileName.c_str(), "r");

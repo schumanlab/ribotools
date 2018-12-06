@@ -32,9 +32,28 @@ int metageneMain(int argc, char const *argv[])
 {
     auto tic = std::chrono::high_resolution_clock::now();
     auto config = MetaGeneConfig(argc, argv);
-    auto parser = ParserBed(config.fileBed);
+    auto parserBed = ParserBed(config.fileBed);
 
+    std::vector<ParserGbed> list_parserGbed(config.filesGbed.size());
+
+    std::string query = "chr18:56193977-56295869";
+    for (size_t k = 0; k < config.filesGbed.size(); k++)
+    {
+        std::cout << config.filesGbed.at(k) << " ";
+        list_parserGbed.at(k).open(config.filesGbed.at(k));
+        list_parserGbed.at(k).grab(query);
+        int lines = 0;
+        while (list_parserGbed.at(k).next() >= 0)
+        {
+            lines++;
+        }
+
+        std::cout << lines << std::endl;
+
+    }
     
+
+    /*
     std::vector<ParserGbed*> listGbed(config.filesGbed.size());
     int i = 0;
     for(const auto file : config.filesGbed)
@@ -43,20 +62,33 @@ int metageneMain(int argc, char const *argv[])
     }
     
 
-    int lines = 0;
-    std::string query = "chr18:56193977-56295869";
-    auto parserGbed = listGbed.at(0);
+    
+    
 
-    parserGbed->grab(query);
-
-    while (parserGbed->next() > 0)
+    for (size_t k = 0; k < listGbed.size(); k++)
     {
-        //auto ss = std::stringstream(parserGbed->buffer.s);
-        //auto gbed = GbedRecord();
-        //ss >> gbed;
-        std::cout << parserGbed->buffer.s << std::endl;
-        lines++;
+        auto parserGbed = listGbed.at(k);
+        int lines = 0;
+
+        std::cout << config.filesGbed.at(k) << std::endl;
+
+        parserGbed->grab(query);
+
+        while (parserGbed->next() > 0)
+        {
+            //auto ss = std::stringstream(parserGbed->buffer.s);
+            //auto gbed = GbedRecord();
+            //ss >> gbed;
+            //std::cout << parserGbed->buffer.s << std::endl;
+            lines++;
+        }
+
+        std::cout << "TABIX Lines: " << lines << std::endl;
     }
+
+    */
+
+    
 
     
     
@@ -87,7 +119,7 @@ int metageneMain(int argc, char const *argv[])
     auto toc = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = toc - tic;
     std::cout << "ribotools metagene " << elapsed.count() << " s.\n";
-    std::cout << "BEDLINES: " << lines << std::endl;
+    
 
     return 0;
 }

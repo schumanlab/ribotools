@@ -10,9 +10,10 @@
 class ParserGbed
 {
 public:
-    ParserGbed(const std::string &file = "");
+    ParserGbed();
     ~ParserGbed();
 
+    void open(const std::string &file);
     int grab(const std::string &query);
     int next();
 
