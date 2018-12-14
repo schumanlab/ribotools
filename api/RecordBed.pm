@@ -59,19 +59,19 @@ sub exons()
         $self->{exonEnd}[$e] = $self->{exonStart}[$e] + $self->{blockSizes}[$e];
         $self->{offset}[$e] = $offset;
 
-        if (($self->{exonStart}->[$e] <= $self->{thickStart}) &&
-            ($self->{thickStart} <= $self->{exonEnd}->[$e]))
+        if (($self->{exonStart}[$e] <= $self->{thickStart}) &&
+            ($self->{thickStart} <= $self->{exonEnd}[$e]))
         {
-            $self->{cdsStart} = $self->{thickStart} - $self->{exonStart}->[$e] + $offset;
+            $self->{cdsStart} = $self->{thickStart} - $self->{exonStart}[$e] + $offset;
         }
 
-        if (($self->{exonStart}->[$e] <= $self->{thickEnd}) &&
-            ($self->{thickEnd} <= $self->{exonEnd}->[$e]))
+        if (($self->{exonStart}[$e] <= $self->{thickEnd}) &&
+            ($self->{thickEnd} <= $self->{exonEnd}[$e]))
         {
-            $self->{cdsEnd} = $self->{thickEnd} - $self->{exonStart}->[$e] + $offset;
+            $self->{cdsEnd} = $self->{thickEnd} - $self->{exonStart}[$e] + $offset;
         }
         
-        $offset += $self->{blockSizes}->[$e];
+        $offset += $self->{blockSizes}[$e];
     }
 
     $self->{spanGene} = $offset;
@@ -86,6 +86,27 @@ sub exons()
 
 }
 
+
+sub linear()
+{
+    my $self = $_[0];
+    my $qryPosition = $_[1];
+    my $linearPosition = -1;
+
+    for (my $e = 0; $e < $self->{blocks}; $e++)
+    {
+        if (($self->{exonStart}[$e] <= $qryPosition) &&
+            ($qryPosition <= $self->{exonEnd}[$e]))
+        {
+            $linearPosition = $qryPosition - $self->{exonStart}[$e] + $self->{offset}[$e];
+            last;
+        }
+    }
+
+    $linearPosition = $self->{spanGene} - $linearPosition if($self->{strand} eq "-");
+    $linearPosition = -1 if ($linearPosition > $self->{spanGene});
+    return $linearPosition;
+}
 
 sub find()
 {
