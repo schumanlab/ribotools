@@ -17,6 +17,7 @@ has 'blocks' => (is => 'rw', isa => 'Int', default => 0);
 has 'blockSizes' => (is => 'rw', isa => 'ArrayRef');
 has 'blockStarts' => (is => 'rw', isa => 'ArrayRef');
 has 'txThickStart' => (is => 'rw', isa => 'Int', default => 0);
+has 'txThickCenter' => (is => 'rw', isa => 'Int', default => 0);
 has 'txThickEnd' => (is => 'rw', isa => 'Int', default => 0);
 has 'lengthThick' => (is => 'rw', isa => 'Int', default => 0);
 has 'lengthChrom' => (is => 'rw', isa => 'Int', default => 0);
@@ -97,9 +98,13 @@ sub exons()
         ($txThickStart, $txThickEnd) = ($txThickEnd, $txThickStart);   
     }
 
+    my $txThickCenter = int(($txThickEnd - $txThickStart) / 2);
+    $txThickCenter = $txThickStart + ($txThickCenter - ($txThickCenter % 3));
+
     $self->exonStart(\@exonStart);
     $self->exonEnd(\@exonEnd);
     $self->txThickStart($txThickStart);
+    $self->txThickCenter($txThickCenter);
     $self->txThickEnd($txThickEnd);
     $self->lengthChrom($offsetNow);
     $self->lengthThick($txThickEnd - $txThickStart);

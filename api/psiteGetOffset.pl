@@ -8,7 +8,7 @@ use File::Basename;
 use Bed12;
 
 sub loadBedFile($$);
-sub procesBamFiles($$$);
+sub processBamFiles($$$);
 sub printTable($);
 
 MAIN:
@@ -28,7 +28,7 @@ MAIN:
 
     # process bam files
     $tic = time();
-    procesBamFiles(\%table, \@filesBam, \@dataBed);
+    processBamFiles(\%table, \@filesBam, \@dataBed);
     $toc = time();
     printf(STDERR "Parsed %d BAM files in %.4f sec.\n", scalar(@filesBam), $toc - $tic);
 
@@ -62,7 +62,7 @@ sub printTable($)
 
 
 ### PROCESSBAMFILES
-sub procesBamFiles($$$)
+sub processBamFiles($$$)
 {
     my $table = $_[0];
     my $filesBam = $_[1];
