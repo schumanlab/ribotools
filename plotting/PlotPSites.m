@@ -3,7 +3,7 @@ clc
 clear variables
 close all
 
-fh = fopen('tablePsiteProject_MonoVsPoly.txt','r');
+fh = fopen('/Users/tushevg/Desktop/tablePsiteProject_SomataVsNeuropil_More.txt','r');
 txt = textscan(fh, '%s %s %s','delimiter','\t');
 fclose(fh);
 fname = txt{1};
@@ -17,30 +17,45 @@ idxEnd = (201:300);
 for k = 1 : length(val)
     
     v = sscanf(val{k}, '%f,');
-    c = sscanf(cnt{k}, '%d,');
-    Y(k,idxStart) = v(idxStart)./mean(c(idxStart));
-    Y(k,idxCenter) = v(idxCenter)./mean(c(idxCenter));
-    Y(k,idxEnd) = v(idxEnd)./mean(c(idxEnd));
+    c = sscanf(cnt{k}, '%f,');
+    Y(k,idxStart) = v(idxStart)./mean(v(idxStart));
+    Y(k,idxCenter) = v(idxCenter)./mean(v(idxCenter));
+    Y(k,idxEnd) = v(idxEnd)./mean(v(idxEnd));
     
 end
 
-idx = 7:9;
-Xbin = (1:300)';
-Ym = mean(Y(idx,:),1);
-Yse = std(Y(idx,:),[],1);
+%
+idx = 4:5;
+titleSample = 'Neuropil-Poly';
+
+idxX = [-25:74;...
+        81:180;...
+        186:285];
+idxY = [1:100;...
+        101:200;...
+        201:300];
+  
+clr_mtx = [30,144,255;...
+           148,0,211;...
+           144,238,144]./255;
 
 figure('color','w');
 hold on;
-xbin = -25:74;
-plot(xbin,Ym(1:100));
-
-xbin = 81:180;
-plot(xbin, Ym(101:200));
-
-xbin = 186:285;
-plot(xbin, Ym(201:300));
-
+for k = 1 : 3
+    
+    Ym = mean(Y(idx,idxY(k,:)), 1);
+    Yse = std(Y(idx,idxY(k,:)), [], 1);
+    Xbin = idxX(k,:);
+    xpatch = [Xbin, fliplr(Xbin)];
+    ypatch = [(Ym-Yse), fliplr((Ym+Yse))];
+    
+    hp = fill(xpatch, ypatch, clr_mtx(k,:));
+    set(hp,'edgecolor','none','facealpha',0.5);
+    plot(Xbin, Ym, 'color',clr_mtx(k,:));
+    
+end
 hold off;
+
 xtick = [-25,0,25,50,...
          81,106,131,156,180,...
          211,236,261,285];
@@ -52,34 +67,42 @@ xticklabel(7) = {'center'};
 xticklabel(12) = {'stop'};
           
 set(gca,'xtick',xtick,...
-        'xticklabel',xticklabel);
-
-
-%{
-xpatch = [Xbin', fliplr(Xbin')];
-ypatch = [(Ym-Yse), fliplr((Ym+Yse))];
-
-figure('color','w');
-hold(gca,'on');
-hp = fill(xpatch, ypatch, [.75, .75, .75]);
-plot(Xbin, Ym, 'k', 'linewidth', 1);
-set(hp, 'EdgeColor', 'none');
-hold(gca,'off');
-%}
-
-%{
-Yz = Yn - mean(Yn);
+        'xticklabel',xticklabel,...
+        'ylim',[0,8]);
+xlabel('relative offset [nts]','fontsize',12);
+ylabel('relative coverage of p-site','fontsize',12);
+title(titleSample,'fontsize',12,'fontweight','normal');
+print(gcf, '-dsvg','-r300',sprintf('figurePSiteProjection_%s.svg',titleSample));
 
 nfft = 256; % next larger power of 2
-Yf = fft(Yz,nfft); % Fast Fourier Transform
-Yp = abs(Yf.^2); % raw power spectrum density
 Fs = 1;
-f_scale = (0:nfft/2)* Fs/nfft;
-Yhs = Yp(1:1+nfft/2); % half-spectrum
 
-figure('color','w');
-plot(Yn,'k','linewidth',1.2);
+Xff = (0:nfft/2)* Fs/nfft;
+Yff = zeros(length(idx),ceil(nfft/2+1));
+for k = 1 : length(idx)
+    Yn = mean(Y(idx(k),:), 1);
+    Yz = Yn - mean(Yn);
 
+    Yf = fft(Yz,nfft); % Fast Fourier Transform
+    Yp = abs(Yf.^2); % raw power spectrum density
+    
+    Yff(k,:) = Yp(1:1+nfft/2); % half-spectrum
+end
+
+Ym = mean(Yff,1);
+Yse = std(Yff,[],1)./sqrt(size(Yff,1));
+xpatch = [Xff, fliplr(Xff)];
+ypatch = [(Ym-Yse), fliplr((Ym+Yse))];
+Xexp = 1/3;
 figure('color','w');
-plot(f_scale, Yhs, 'k','linewidth',1.2);
-%}
+hold on;
+hp = fill(xpatch, ypatch, [0.5,0.5,0.5]);
+set(hp,'edgecolor','none','facealpha',0.5);
+plot(Xff, Ym, 'color','k');
+ylim = get(gca,'ylim');
+plot([Xexp,Xexp],[0,0.025*max(ylim)],'r','linewidth',1.2);
+hold off;
+ylabel('power spectrum desnity','fontsize',12);
+xlabel('frequency [Hz]');
+title(titleSample,'fontsize',12,'fontweight','normal');
+print(gcf, '-dsvg','-r300',sprintf('figurePSiteFTransform_%s.svg',titleSample));

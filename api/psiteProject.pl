@@ -85,17 +85,20 @@ sub processBamFiles($$$$)
             my @reads = $hts->get_features_by_location(-seq_id => $bed->chrom,
                                                        -start  => $bed->thickStart,
                                                        -end    => $bed->thickEnd);
-            
-            next if(scalar(@reads) == 0);
-            my $depth = (3 * scalar(@reads) / $bed->lengthThick);
-            next if($depth < 1);
+            my $readsCount = scalar(@reads);
+            next if ($readsCount == 0);
+            my $depth = (3 * $readsCount / $bed->lengthThick);
+            next if ($depth < 1);
             
             foreach my $read (@reads)
             {
                 my $readPosition = ($bed->strand eq "+") ? $read->start : $read->end;
                 my $readSpan = $read->query->length;
+
+                #next if($readSpan != 29);
+
                 my $readLinear = $bed->toLinear($readPosition);
-                next if($readLinear < 0);
+                next if ($readLinear < 0);
                 my $psiteOffset = (exists($offsets->{$fileName}{$readSpan})) ? $offsets->{$fileName}{$readSpan} : 0;
                 $readsUsed++;
 
@@ -108,21 +111,21 @@ sub processBamFiles($$$$)
                 {
                     $relOffsetStart += 25;
                     $coverage[$relOffsetStart] += (1/$depth);
-                    $counts[$relOffsetStart]++;
+                    $counts[$relOffsetStart] += (1/$readsCount);
                 }
 
                 if ((-50 <= $relOffsetCenter) && ($relOffsetCenter <= 50))
                 {
                     $relOffsetCenter += 151;
                     $coverage[$relOffsetCenter] += (1/$depth);
-                    $counts[$relOffsetCenter]++;
+                    $counts[$relOffsetCenter] += (1/$readsCount);
                 }
 
                 if ((-75 <= $relOffsetEnd) && ($relOffsetEnd <= 25))
                 {
                     $relOffsetEnd += 277;
                     $coverage[$relOffsetEnd] += (1/$depth);
-                    $counts[$relOffsetEnd]++;
+                    $counts[$relOffsetEnd] += (1/$readsCount);
                 }
 
             }
@@ -147,12 +150,12 @@ sub loadBedFile($$)
     my $fileBed = $_[1];
 
     open(my $fh, "<", $fileBed) or die $!;
-    while(<$fh>)
+    while (<$fh>)
     {
         chomp($_);
         my $bed = Bed12->new();
         $bed->fromLine($_);
-        next if(($bed->lengthThick < 300) || (5000 < $bed->lengthThick));
+        next if (($bed->lengthThick < 300) || (5000 < $bed->lengthThick));
         push(@{$dataBed}, $bed);
     }
     close($fh);
@@ -166,7 +169,7 @@ sub loadPsiteTable($$)
     my $filePsite = $_[1];
 
     open(my $fh, "<", $filePsite) or die $!;
-    while(<$fh>)
+    while (<$fh>)
     {
         chomp($_);
         my ($fileName, $readLength, $offset) = split("\t", $_, 3);
