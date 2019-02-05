@@ -4,6 +4,7 @@
 
 int help();
 int metageneMain(int argc, char const *argv[]);
+int extractumi(int argc, char const *argv[]);
 
 int main(int argc, char const *argv[])
 {
@@ -15,24 +16,22 @@ int main(int argc, char const *argv[])
     // check first argument for subcommand
     std::string subCommand(argv[1]);
 
-    if ((subCommand == "-h") || (subCommand == "--help"))
-    {
+    if ((subCommand == "-h") || (subCommand == "--help")) {
         return help();
     }
-    else if ((subCommand == "-v") || (subCommand == "--version"))
-    {
+    else if ((subCommand == "-v") || (subCommand == "--version")) {
         return version("ribotools");
     }
-    else if ((subCommand == "-c") || (subCommand == "--contact"))
-    {
+    else if ((subCommand == "-c") || (subCommand == "--contact")) {
         return contact();
     }
-    else if (subCommand == "metagene")
-    {
+    else if (subCommand == "metagene") {
         return metageneMain(argc - 1, argv + 1);
     }
-    else
-    {
+    else if (subCommand == "extractumi") {
+        return extractumi(argc - 1, argv + 1);
+    }
+    else {
         std::cerr << "ribotools" << std::endl;
         std::cerr << '\t' << "Error:: unknown subcommand " << subCommand << std::endl;
         return help();

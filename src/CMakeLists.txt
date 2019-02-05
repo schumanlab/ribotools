@@ -5,7 +5,8 @@ set(SOURCE  ribotools.cpp
             gbedrecord.cpp gbedrecord.hpp
             parserbed.cpp parserbed.hpp
             parsergbed.cpp parsergbed.hpp
-            metageneMain.cpp metagene.cpp metagene.hpp)
+            metageneMain.cpp metagene.cpp metagene.hpp
+            extractumi.cpp)
 add_executable(${PROJECT_NAME} ${SOURCE})
 
 find_package(PkgConfig REQUIRED)
