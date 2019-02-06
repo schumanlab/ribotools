@@ -2,6 +2,8 @@
 
 use warnings;
 use strict;
+
+use FindBin::libs;
 use Bio::DB::HTS::Tabix;
 use File::Basename;
 use RecordBed;
