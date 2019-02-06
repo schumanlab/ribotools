@@ -147,7 +147,7 @@ sub bed_parser($$$)
         }
 
         $lines++;
-        last if($lines == 10000);
+        #last if($lines == 10000);
 
     }
     close($fh);
