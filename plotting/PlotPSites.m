@@ -3,7 +3,7 @@ clc
 clear variables
 close all
 
-fh = fopen('/Users/tushevg/Desktop/tablePsiteProject_SomataVsNeuropil_More.txt','r');
+fh = fopen('/Users/tushevg/Desktop/tablePSitesProjection_NPL_MONO_12Feb2019.txt','r');
 txt = textscan(fh, '%s %s %s','delimiter','\t');
 fclose(fh);
 fname = txt{1};
@@ -25,7 +25,7 @@ for k = 1 : length(val)
 end
 
 %
-idx = 4:5;
+idx = 1:3;
 titleSample = 'Neuropil-Poly';
 
 idxX = [-25:74;...

@@ -2,6 +2,7 @@
 
 use warnings;
 use strict;
+use FindBin::libs;
 use Bio::DB::HTS;
 use Time::HiRes qw(time);
 use File::Basename;
@@ -55,7 +56,7 @@ sub printTable($)
                     $psiteOffsetBest = $psiteOffset;
                 }
             }
-            print $file,"\t",$readLength,"\t",$psiteOffsetBest,"\n";
+            print $file,"\t",$readLength,"\t",$psiteOffsetBest,"\t",$psiteRepeatBest,"\n";
         }
     }
 }

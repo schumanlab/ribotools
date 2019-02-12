@@ -2,6 +2,7 @@
 
 use warnings;
 use strict;
+use FindBin::libs;
 use Bio::DB::HTS;
 use Time::HiRes qw(time);
 use File::Basename;
@@ -99,7 +100,8 @@ sub processBamFiles($$$$)
 
                 my $readLinear = $bed->toLinear($readPosition);
                 next if ($readLinear < 0);
-                my $psiteOffset = (exists($offsets->{$fileName}{$readSpan})) ? $offsets->{$fileName}{$readSpan} : 0;
+                next if (!exists($offsets->{$fileName}{$readSpan}));
+                my $psiteOffset = $offsets->{$fileName}{$readSpan};
                 $readsUsed++;
 
                 # relative offsets
@@ -129,6 +131,7 @@ sub processBamFiles($$$$)
                 }
 
             }
+            #last;
         }
 
         $table->{$fileName} = [\@coverage, \@counts];
@@ -172,7 +175,7 @@ sub loadPsiteTable($$)
     while (<$fh>)
     {
         chomp($_);
-        my ($fileName, $readLength, $offset) = split("\t", $_, 3);
+        my ($fileName, $readLength, $offset, $score) = split("\t", $_, 4);
         $offsets->{$fileName}{$readLength} = $offset;
     }
     close($fh);
