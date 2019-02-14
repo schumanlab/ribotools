@@ -8,20 +8,27 @@ use Time::HiRes qw(time);
 use File::Basename;
 use Bed12;
 
+sub loadPsiteTable($$);
 sub loadBedFile($$);
-sub processBamFiles($$$$$);
+sub processBamFiles($$$$);
 sub printTable($);
 
 MAIN:
 {
-    my $readLength = shift;
-    my $psiteOffset = shift;
+    my $filePsite = shift;
     my $fileBed = shift;
     my @filesBam = @ARGV;
+    my %offsets = ();
     my @dataBed = ();
     my %table = ();
     my $tic;
     my $toc;
+
+    # parse psite table
+    $tic = time();
+    loadPsiteTable(\%offsets, $filePsite);
+    $toc = time();
+    printf(STDERR "Parsed %d rows in %.4f sec.\n", scalar(keys %offsets), $toc - $tic);
 
     # parse annotation
     $tic = time();
@@ -31,7 +38,7 @@ MAIN:
 
     # process bam files
     $tic = time();
-    processBamFiles(\%table, \@filesBam, \@dataBed, $readLength, $psiteOffset);
+    processBamFiles(\%table, \@filesBam, \%offsets, \@dataBed);
     $toc = time();
     printf(STDERR "Parsed %d BAM files in %.4f sec.\n", scalar(@filesBam), $toc - $tic);
 
@@ -44,28 +51,42 @@ sub printTable($)
 {
     my $table = $_[0];
 
-    foreach my $file (sort keys %{$table})
-    {
-        print $file,"\t",join(",", @{$table->{$file}[0]}),"\t",join(",", @{$table->{$file}[1]}),"\n";
+    foreach my $file (sort keys %{$table}) {
+        foreach my $label (sort keys %{$table->{$file}}) {
+            foreach my $span (sort {$a <=> $b} keys %{$table->{$file}{$label}}) {
+
+                next if (!exists($table->{$file}{$label}{$span}{"offset"}));
+                next if (!exists($table->{$file}{$label}{$span}{"frame"}));
+                my $frame0 = exists($table->{$file}{$label}{$span}{"frame"}{0}) ? $table->{$file}{$label}{$span}{"frame"}{0} : 0; 
+                my $frame1 = exists($table->{$file}{$label}{$span}{"frame"}{1}) ? $table->{$file}{$label}{$span}{"frame"}{1} : 0;
+                my $frame2 = exists($table->{$file}{$label}{$span}{"frame"}{2}) ? $table->{$file}{$label}{$span}{"frame"}{2} : 0;
+
+                print $file,"\t",
+                $label,"\t",
+                $span,"\t",
+                $table->{$file}{$label}{$span}{"offset"},"\t",
+                $frame0,"\t",
+                $frame1,"\t",
+                $frame2,"\n";
+            }
+        }
     }
 }
 
 
 ### PROCESSBAMFILES
-sub processBamFiles($$$$$)
+sub processBamFiles($$$$)
 {
     my $table = $_[0];
     my $filesBam = $_[1];
-    my $dataBed = $_[2];
-    my $readLength = $_[3];
-    my $psiteOffset = $_[4];
+    my $offsets = $_[2];
+    my $dataBed = $_[3];
 
     foreach my $fileBam (@{$filesBam})
     {
         my $fileName = fileparse($fileBam);
         my $readsUsed = 0;
-        
-        
+
         # start timer
         printf(STDERR "Processing $fileName ... ");
         my $tic = time();
@@ -80,30 +101,35 @@ sub processBamFiles($$$$$)
                                                        -start  => $bed->thickStart,
                                                        -end    => $bed->thickEnd);
             my $readsCount = scalar(@reads);
+            next if ($readsCount < 1);
+            next if ($bed->strand eq "-");
             
             foreach my $read (@reads)
             {
                 my $readPosition = ($bed->strand eq "+") ? $read->start : $read->end;
                 my $readSpan = $read->query->length;
-                next if($readSpan != $readLength);
-
                 my $readLinear = $bed->toLinear($readPosition);
+
                 next if ($readLinear < 0);
+                next if (!exists($offsets->{$fileName}{$readSpan}));
+                my $psiteOffset = $offsets->{$fileName}{$readSpan};
                 $readsUsed++;
 
-                # relative offsets
-                my $frame = ($readLinear + $psiteOffset - $bed->txThickStart) % 3;
-                
-            }
-            last;
-        }
+                # frame
+                my $frame = abs($readLinear - $bed->txThickStart) % 3;
+                my $label = "CDS";
+                $label="5pUTR" if ($readLinear < $bed->txThickStart);
+                $label="3pUTR" if ($readLinear > $bed->txThickEnd);
+                $table->{$fileName}{$label}{$readSpan}{"frame"}{$frame}++;
+                $table->{$fileName}{$label}{$readSpan}{"offset"} = $psiteOffset;
 
-        $table->{$fileName} = [\@coverage, \@counts];
+            }
+            
+        }
 
         # stop timer
         my $toc = time();
         printf(STDERR "done in %.4f sec. Reads used: %d\n", ($toc - $tic), $readsUsed);
-
         last;
     }
 
@@ -115,6 +141,7 @@ sub loadBedFile($$)
 {
     my $dataBed = $_[0];
     my $fileBed = $_[1];
+    my %genes = ();
 
     open(my $fh, "<", $fileBed) or die $!;
     while (<$fh>)
@@ -122,9 +149,28 @@ sub loadBedFile($$)
         chomp($_);
         my $bed = Bed12->new();
         $bed->fromLine($_);
-        next if (($bed->lengthThick < 300) || (5000 < $bed->lengthThick));
+        my ($transcript, $gene) = split(";", $bed->name, 2);
+        #next if (exists($genes{$gene}));
+        #$genes{$gene}++;
+        #next if (($bed->lengthThick < 300) || (5000 < $bed->lengthThick));
         push(@{$dataBed}, $bed);
     }
     close($fh);
 }
 
+
+### LOADPSITETABLE
+sub loadPsiteTable($$)
+{
+    my $offsets = $_[0];
+    my $filePsite = $_[1];
+
+    open(my $fh, "<", $filePsite) or die $!;
+    while (<$fh>)
+    {
+        chomp($_);
+        my ($fileName, $readLength, $offset, $score) = split("\t", $_, 4);
+        $offsets->{$fileName}{$readLength} = $offset;
+    }
+    close($fh);
+}
