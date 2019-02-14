@@ -88,8 +88,8 @@ sub processBamFiles($$$$)
                                                        -end    => $bed->thickEnd);
             my $readsCount = scalar(@reads);
             next if ($readsCount == 0);
-            my $depth = ($readsCount / $bed->lengthThick);
-            next if ($depth < 1);
+            #my $depth = ($readsCount / $bed->lengthThick);
+            next if ($readCount < 128);
             
             foreach my $read (@reads)
             {
