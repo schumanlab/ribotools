@@ -98,8 +98,8 @@ sub processBamFiles($$$$)
         foreach my $bed (@{$dataBed})
         {
             my @reads = $hts->get_features_by_location(-seq_id => $bed->chrom,
-                                                       -start  => $bed->thickStart,
-                                                       -end    => $bed->thickEnd);
+                                                       -start  => $bed->chromStart,
+                                                       -end    => $bed->chromEnd);
             my $readsCount = scalar(@reads);
             next if ($readsCount < 1);
             next if ($bed->strand eq "-");
