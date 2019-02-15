@@ -98,7 +98,7 @@ sub exons()
         ($txThickStart, $txThickEnd) = ($txThickEnd, $txThickStart);   
     }
 
-    my $txThickCenter = int(($txThickEnd - $txThickStart) / 2);
+    my $txThickCenter = int(($txThickEnd - $txThickStart + 1) / 2);
     $txThickCenter = $txThickStart + ($txThickCenter - ($txThickCenter % 3));
 
     $self->exonStart(\@exonStart);

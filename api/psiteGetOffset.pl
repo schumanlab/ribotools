@@ -96,11 +96,11 @@ sub processBamFiles($$$)
             next if(scalar(@reads) == 0);
             foreach my $read (@reads)
             {
-                my $readPosition = ($bed->strand eq "+") ? $read->start : $read->end;
+                my $readPosition = ($bed->strand eq "+") ? $read->start : ($read->end - 1);
                 my $readSpan = $read->query->length;
                 my $readLinear = $bed->toLinear($readPosition);
                 next if($readLinear < 0);
-                my $psiteOffset = $bed->txThickStart - $readLinear;
+                my $psiteOffset = ($bed->txThickStart - $readLinear + 1);
 
                 if ((0 <= $psiteOffset) && ($psiteOffset <= $readSpan))
                 {
@@ -127,13 +127,18 @@ sub loadBedFile($$)
 {
     my $dataBed = $_[0];
     my $fileBed = $_[1];
+    my %genes = ();
 
     open(my $fh, "<", $fileBed) or die $!;
-    while(<$fh>)
+    while (<$fh>)
     {
         chomp($_);
         my $bed = Bed12->new();
         $bed->fromLine($_);
+        my ($transcript, $gene) = split(";", $bed->name, 2);
+        next if (exists($genes{$gene}));
+        $genes{$gene}++;
+        #next if (($bed->lengthThick < 300) || (5000 < $bed->lengthThick));
         push(@{$dataBed}, $bed);
     }
     close($fh);

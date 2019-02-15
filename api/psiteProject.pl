@@ -88,26 +88,25 @@ sub processBamFiles($$$$)
                                                        -end    => $bed->thickEnd);
             my $readsCount = scalar(@reads);
             next if ($readsCount == 0);
-            my $depth = 1;#($readsCount / $bed->lengthThick);
-            next if ($readsCount < 128);
+            next if ($bed->lengthThick == 0);
+            
+            my $depth = ($readsCount /$bed->lengthThick);
             
             foreach my $read (@reads)
             {
-                my $readPosition = ($bed->strand eq "+") ? $read->start : $read->end;
+                my $readPosition = ($bed->strand eq "+") ? $read->start : ($read->end - 1);
                 my $readSpan = $read->query->length;
-
-                #next if($readSpan != 29);
 
                 my $readLinear = $bed->toLinear($readPosition);
                 next if ($readLinear < 0);
                 next if (!exists($offsets->{$fileName}{$readSpan}));
-                my $psiteOffset = $offsets->{$fileName}{$readSpan};
+                my $psiteOffset = $offsets->{$fileName}{$readSpan} + 1; # add one to get the position after the offset
                 $readsUsed++;
 
                 # relative offsets
-                my $relOffsetStart = $readLinear + $psiteOffset - $bed->txThickStart;
+                my $relOffsetStart = $readLinear + $psiteOffset - $bed->txThickStart - 2;
                 my $relOffsetCenter = $readLinear + $psiteOffset - $bed->txThickCenter;
-                my $relOffsetEnd = $readLinear + $psiteOffset - $bed->txThickEnd;
+                my $relOffsetEnd = $readLinear + $psiteOffset - $bed->txThickEnd - 3;
 
                 if ((-25 <= $relOffsetStart) && ($relOffsetStart <= 75))
                 {
@@ -151,6 +150,7 @@ sub loadBedFile($$)
 {
     my $dataBed = $_[0];
     my $fileBed = $_[1];
+    my %genes = ();
 
     open(my $fh, "<", $fileBed) or die $!;
     while (<$fh>)
@@ -158,7 +158,10 @@ sub loadBedFile($$)
         chomp($_);
         my $bed = Bed12->new();
         $bed->fromLine($_);
-        next if (($bed->lengthThick < 300) || (5000 < $bed->lengthThick));
+        my ($transcript, $gene) = split(";", $bed->name, 2);
+        next if (exists($genes{$gene}));
+        $genes{$gene}++;
+        #next if (($bed->lengthThick < 300) || (5000 < $bed->lengthThick));
         push(@{$dataBed}, $bed);
     }
     close($fh);

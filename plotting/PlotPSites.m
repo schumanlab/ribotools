@@ -3,14 +3,15 @@ clc
 clear variables
 close all
 
-fh = fopen('/Users/tushevg/Desktop/tablePSitesProjection_NPL_MONO_12Feb2019.txt','r');
+fh = fopen('/Users/tushevg/Desktop/testTrackCrct.txt','r');
 txt = textscan(fh, '%s %s %s','delimiter','\t');
 fclose(fh);
 fname = txt{1};
 val = txt{2};
 cnt = txt{3};
 
-Y = zeros(9, 300);
+Y = zeros(length(val), 300);
+Yc = zeros(length(cnt), 300);
 idxStart = (1:100);
 idxCenter = (101:200);
 idxEnd = (201:300);
@@ -18,19 +19,27 @@ for k = 1 : length(val)
     
     v = sscanf(val{k}, '%f,');
     c = sscanf(cnt{k}, '%f,');
-    Y(k,idxStart) = v(idxStart)./mean(v(idxStart));
-    Y(k,idxCenter) = v(idxCenter)./mean(v(idxCenter));
-    Y(k,idxEnd) = v(idxEnd)./mean(v(idxEnd));
+    Y(k,idxStart) = v(idxStart);%./mean(v(idxStart));
+    Y(k,idxCenter) = v(idxCenter);%./mean(v(idxCenter));
+    Y(k,idxEnd) = v(idxEnd);%./mean(v(idxEnd));
+    
+    Yc(k,idxStart) = c(idxStart);%./mean(v(idxStart));
+    Yc(k,idxCenter) = c(idxCenter);%./mean(v(idxCenter));
+    Yc(k,idxEnd) = c(idxEnd);%./mean(v(idxEnd));
     
 end
 
-%
-idx = 1:3;
-titleSample = 'Neuropil-Poly';
+%Y = bsxfun(@rdivide, Y, mean(Yc,2));
 
-idxX = [-25:74;...
-        81:180;...
-        186:285];
+
+
+idx = 1:3;
+titleSample = 'Neuropil-Mono';
+
+idxXTemplate = (0:99);
+idxX = [idxXTemplate - 25;...
+        idxXTemplate + 91;...
+        idxXTemplate + 207];
 idxY = [1:100;...
         101:200;...
         201:300];
@@ -52,25 +61,29 @@ for k = 1 : 3
     hp = fill(xpatch, ypatch, clr_mtx(k,:));
     set(hp,'edgecolor','none','facealpha',0.5);
     plot(Xbin, Ym, 'color',clr_mtx(k,:));
+    plot(Xbin, Ym, '.', 'color', clr_mtx(k,:), 'markersize', 8);
     
 end
 hold off;
 
-xtick = [-25,0,25,50,...
-         81,106,131,156,180,...
-         211,236,261,285];
-xticklabel = num2cell([(-25:25:50),...
+xtickTemplate = (0:25:100);
+
+
+xtick = [xtickTemplate - 25,...
+         xtickTemplate + 91,...
+         xtickTemplate + 207];
+xticklabel = num2cell([(-25:25:75),...
               (-50:25:50),...
-              (-50:25:26)]);
+              (-75:25:26)]);
 xticklabel(2) = {'start'};
-xticklabel(7) = {'center'};
-xticklabel(12) = {'stop'};
+xticklabel(8) = {'center'};
+xticklabel(14) = {'stop'};
           
 set(gca,'xtick',xtick,...
         'xticklabel',xticklabel,...
-        'ylim',[0,8]);
+        'ylim',[0,max(Y(:))],'box','on');
 xlabel('relative offset [nts]','fontsize',12);
-ylabel('relative coverage of p-site','fontsize',12);
+ylabel('p-site depth','fontsize',12);
 title(titleSample,'fontsize',12,'fontweight','normal');
 print(gcf, '-dsvg','-r300',sprintf('figurePSiteProjection_%s.svg',titleSample));
 
@@ -81,12 +94,15 @@ Xff = (0:nfft/2)* Fs/nfft;
 Yff = zeros(length(idx),ceil(nfft/2+1));
 for k = 1 : length(idx)
     Yn = mean(Y(idx(k),:), 1);
+    Yn = [Yn(1:100),Yn(103:200),Yn(201:300)];
     Yz = Yn - mean(Yn);
 
     Yf = fft(Yz,nfft); % Fast Fourier Transform
     Yp = abs(Yf.^2); % raw power spectrum density
     
+    
     Yff(k,:) = Yp(1:1+nfft/2); % half-spectrum
+    
 end
 
 Ym = mean(Yff,1);
