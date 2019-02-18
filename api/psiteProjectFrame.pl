@@ -130,7 +130,6 @@ sub processBamFiles($$$$)
         # stop timer
         my $toc = time();
         printf(STDERR "done in %.4f sec. Reads used: %d\n", ($toc - $tic), $readsUsed);
-        last;
     }
 
 }
