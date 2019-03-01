@@ -32,6 +32,7 @@ public:
     friend std::istream& operator>> (std::istream& in, BedRecord &data);
     void parseExons();
     bool toLinear(uint32_t &readOffset, uint32_t readStart);
+    bool overlap(const std::string &readChrom, uint32_t readStart, uint32_t readEnd);
 
 private:
     struct ExonNode

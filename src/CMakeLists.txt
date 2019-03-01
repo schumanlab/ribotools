@@ -7,7 +7,8 @@ set(SOURCE  ribotools.cpp
             parsergbed.cpp parsergbed.hpp
             metageneMain.cpp metagene.cpp metagene.hpp
             extractumi.cpp
-            countasite.cpp)
+            countasite.cpp
+            countintersect.cpp)
 add_executable(${PROJECT_NAME} ${SOURCE})
 
 find_package(PkgConfig REQUIRED)

@@ -10,10 +10,13 @@
                 "cwd": "${workspaceRoot}/build"
             },
             "command": "cmake",
-            "args": ["-G",
-                    "Unix Makefiles",
-                    "-DCMAKE_BUILD_TYPE=Debug",
-                    ".."]
+            "args": [
+                "-G",
+                "Unix Makefiles",
+                "-DCMAKE_BUILD_TYPE=Debug",
+                ".."
+            ],
+            "group": "build"
         },
         {
             "label": "make",
@@ -22,7 +25,9 @@
                 "cwd": "${workspaceRoot}/build"
             },
             "command": "make",
-            "dependsOn": ["cmake"]
+            "dependsOn": [
+                "cmake"
+            ]
         },
         {
             "label": "build",
@@ -34,8 +39,9 @@
                 "kind": "build",
                 "isDefault": true
             },
-            "dependsOn": ["make"]
+            "dependsOn": [
+                "make"
+            ]
         }
     ]
-}
 }

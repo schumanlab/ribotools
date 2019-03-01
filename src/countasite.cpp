@@ -7,6 +7,7 @@
 #include <chrono>
 
 #include "version.hpp"
+#include "bedrecord.hpp"
 
 inline uint32_t bam_calend(const bam1_core_t *core, const uint32_t *cigar)
 {
@@ -29,26 +30,49 @@ int countasite(int arg, char const *argv[])
     samFile *fhBam = sam_open(fileBam.c_str(), "r");
     bam_hdr_t *hdrBam = sam_hdr_read(fhBam);
     bam1_t *aln = bam_init1();
-    kstring_t buffer = {0, 0, NULL};
+    kstring_t buffer = {0, 0, nullptr};
+    
+    auto bed = BedRecord();
+
     int counter = 0;
+    int counterReused = 0;
+    int counterNew = 0;
+    int counterIntergenic = 0;
     while (sam_read1(fhBam, hdrBam, aln) >= 0) {
         counter++;
 
-        //char *readChrom = hdrBam->target_name[aln->core.tid];
-        int32_t readStart = aln->core.pos;
-        int32_t readEnd = bam_calend(&aln->core, bam_get_cigar(aln));
+        std::string readChrom = std::string(hdrBam->target_name[aln->core.tid]);
+        uint32_t readStart = aln->core.pos;
+        uint32_t readEnd = bam_calend(&aln->core, bam_get_cigar(aln));
         int32_t readLength = aln->core.l_qseq;
-        
-        iter = tbx_itr_queryi(fhTabix, aln->core.tid, readStart, readStart+1);
-        int i = 0;
-        while (tbx_itr_next(fhBed, fhTabix, iter, &buffer) >= 0) {
-            //std::cout << buffer.s << std::endl;
-            i++;
-        }
 
-        if (counter > 100000)
-         break;
+        if (bed.overlap(readChrom, readStart, readEnd)) {
+            counterReused++;
+        }
+        else {
+            int i = 0;
+            iter = tbx_itr_queryi(fhTabix, aln->core.tid, readStart, readStart+1);
+            while (tbx_itr_next(fhBed, fhTabix, iter, &buffer) >= 0) {
+                auto ss = std::stringstream(buffer.s);
+                ss >> bed;
+                i++;
+            }
+            
+
+            if (i == 0) {
+                counterIntergenic++;
+            }
+            else {
+                counterNew++;
+            }
+        }        
+
+        //std::cout << i << std::endl;
+        if (counter > 2000000)
+            break;
     }
+
+
     tbx_itr_destroy(iter);
     tbx_destroy(fhTabix);
     hts_close(fhBed);
@@ -58,6 +82,9 @@ int countasite(int arg, char const *argv[])
     sam_close(fhBam);
 
     std::cout << "Counts: " << counter << std::endl;
+    std::cout << "Reused: " << counterReused << std::endl;
+    std::cout << "New: " << counterNew << std::endl;
+    std::cout << "Intergenic: " << counterIntergenic << std::endl;
 
     auto toc = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = toc - tic;

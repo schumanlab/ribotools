@@ -6,6 +6,7 @@ int help();
 int metageneMain(int argc, char const *argv[]);
 int extractumi(int argc, char const *argv[]);
 int countasite(int argc, char const *argv[]);
+int countintersect(int argc, char const *argv[]);
 
 int main(int argc, char const *argv[])
 {
@@ -34,6 +35,9 @@ int main(int argc, char const *argv[])
     }
     else if (subCommand == "countasite") {
         return countasite(argc - 1, argv + 1);
+    }
+    else if (subCommand == "countintersect") {
+        return countintersect(argc - 1, argv + 1);
     }
     else {
         std::cerr << "ribotools" << std::endl;

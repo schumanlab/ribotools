@@ -114,3 +114,9 @@ bool BedRecord::toLinear(uint32_t &readOffset, uint32_t readStart)
 
     return found;
 }
+
+
+bool BedRecord::overlap(const std::string &readChrom, uint32_t readStart, uint32_t readEnd)
+{
+    return (chrom.compare(readChrom) == 0) && (chromStart <= readEnd) && (readStart <= chromEnd);
+}
