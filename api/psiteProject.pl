@@ -53,7 +53,12 @@ sub printTable($)
 
     foreach my $file (sort keys %{$table})
     {
-        print $file,"\t",join(",", @{$table->{$file}[0]}),"\t",join(",", @{$table->{$file}[1]}),"\n";
+        print $file,"\t",
+              join(",", @{$table->{$file}[0]}),"\t",
+              join(",", @{$table->{$file}[1]}),"\t",
+              join(",", @{$table->{$file}[2]}),"\t",
+              join(",", @{$table->{$file}[3]}),"\n";
+
     }
 }
 
@@ -70,8 +75,10 @@ sub processBamFiles($$$$)
     {
         my $fileName = fileparse($fileBam);
         my $readsUsed = 0;
-        my @coverage = (0) x 300;
-        my @counts = (0) x 300;
+        my @frame = (0) x 3;
+        my @coverageStart = (0) x 101;
+        my @coverageCenter = (0) x 101;
+        my @coverageEnd = (0) x 101;
         
         # start timer
         printf(STDERR "Processing $fileName ... ");
@@ -90,7 +97,7 @@ sub processBamFiles($$$$)
             next if ($readsCount == 0);
             next if ($bed->lengthThick == 0);
             
-            my $depth = ($readsCount /$bed->lengthThick);
+            my $depthScore = 1/($readsCount /$bed->lengthThick);
             
             foreach my $read (@reads)
             {
@@ -100,40 +107,43 @@ sub processBamFiles($$$$)
                 my $readLinear = $bed->toLinear($readPosition);
                 next if ($readLinear < 0);
                 next if (!exists($offsets->{$fileName}{$readSpan}));
-                my $psiteOffset = $offsets->{$fileName}{$readSpan} + 1; # add one to get the position after the offset
+                my $psiteOffset = $offsets->{$fileName}{$readSpan}; # add one to get the position after the offset
                 $readsUsed++;
 
                 # relative offsets
-                my $relOffsetStart = $readLinear + $psiteOffset - $bed->txThickStart - 2;
-                my $relOffsetCenter = $readLinear + $psiteOffset - $bed->txThickCenter;
-                my $relOffsetEnd = $readLinear + $psiteOffset - $bed->txThickEnd - 3;
+                my $relOffsetStart = $readLinear + $psiteOffset - $bed->txThickStart - 1;
+                my $relOffsetCenter = $readLinear + $psiteOffset - $bed->txThickCenter - 1;
+                my $relOffsetEnd = $readLinear + $psiteOffset - $bed->txThickEnd - 1;
 
-                if ((-25 <= $relOffsetStart) && ($relOffsetStart <= 75))
-                {
-                    $relOffsetStart += 25;
-                    $coverage[$relOffsetStart] += (1/$depth);
-                    $counts[$relOffsetStart] += (1/$readsCount);
+                # debug
+                #print $readSpan,"\t",$readLinear,"\t",$psiteOffset,"\t",$relOffsetStart,"\t",$relOffsetCenter,"\t",$relOffsetEnd,"\n";
+
+                # accumulate position
+                if ((-25 <= $relOffsetStart) && ($relOffsetStart <= 75)) {
+                    $coverageStart[$relOffsetStart + 25] += $depthScore;
                 }
 
-                if ((-50 <= $relOffsetCenter) && ($relOffsetCenter <= 50))
-                {
-                    $relOffsetCenter += 151;
-                    $coverage[$relOffsetCenter] += (1/$depth);
-                    $counts[$relOffsetCenter] += (1/$readsCount);
+                if ((-50 <= $relOffsetCenter) && ($relOffsetCenter <= 50)) {
+                    $coverageCenter[$relOffsetCenter + 50] += $depthScore;
                 }
 
-                if ((-75 <= $relOffsetEnd) && ($relOffsetEnd <= 25))
-                {
-                    $relOffsetEnd += 277;
-                    $coverage[$relOffsetEnd] += (1/$depth);
-                    $counts[$relOffsetEnd] += (1/$readsCount);
+                if ((-75 <= $relOffsetEnd) && ($relOffsetEnd <= 25)) {
+                    $coverageEnd[$relOffsetEnd + 75] += $depthScore;
                 }
+
+                # accumulate frame
+                my $frameStart = $relOffsetStart % 3;
+                my $frameCenter = $relOffsetCenter % 3;
+                my $frameEnd = $relOffsetEnd % 3;
+                $frame[$frameStart] += $depthScore;
+                $frame[$frameCenter] += $depthScore;
+                $frame[$frameEnd] += $depthScore;
 
             }
             #last;
         }
 
-        $table->{$fileName} = [\@coverage, \@counts];
+        $table->{$fileName} = [\@frame, \@coverageStart, \@coverageCenter, \@coverageEnd];
 
         # stop timer
         my $toc = time();
