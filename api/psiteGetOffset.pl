@@ -8,14 +8,12 @@ use Time::HiRes qw(time);
 use File::Basename;
 use Bed12;
 
-sub loadPsiteTable($$);
 sub loadBedFile($$);
-sub processBamFiles($$$$);
+sub processBamFiles($$$);
 sub printTable($);
 
 MAIN:
 {
-    my $filePsite = shift;
     my $fileBed = shift;
     my @filesBam = @ARGV;
     my @dataBed = ();
@@ -23,12 +21,6 @@ MAIN:
     my %offsets = ();
     my $tic;
     my $toc;
-
-    # parse psite table
-    $tic = time();
-    loadPsiteTable(\%offsets, $filePsite);
-    $toc = time();
-    printf(STDERR "Parsed %d rows in %.4f sec.\n", scalar(keys %offsets), $toc - $tic);
 
     # parse annotation
     $tic = time();
@@ -38,7 +30,7 @@ MAIN:
 
     # process bam files
     $tic = time();
-    processBamFiles(\%table, \@filesBam, \%offsets, \@dataBed);
+    processBamFiles(\%table, \@dataBed, \@filesBam);
     $toc = time();
     printf(STDERR "Parsed %d BAM files in %.4f sec.\n", scalar(@filesBam), $toc - $tic);
 
@@ -54,6 +46,12 @@ sub printTable($)
     foreach my $file (sort keys %{$table}) {
 
         foreach my $readLength (sort {$a <=> $b} keys %{$table->{$file}}) {
+
+            foreach my $offset (sort {$a <=> $b} keys %{$table->{$file}{$readLength}}) {
+                print $file,"\t",$readLength,"\t",$offset,"\t",$table->{$file}{$readLength}{$offset},"\n";
+            }
+
+=head
             my @values = ();
             my $total = 0;
             my $count = $table->{$file}{$readLength}{"counts"};
@@ -64,26 +62,24 @@ sub printTable($)
             }
 
             print $file,"\t",$readLength,"\t",$count,"\t",$values[0]/$total,"\t",$values[1]/$total,"\t",$values[2]/$total,"\n";
-
+=cut
         }
     }
 }
 
 
 ### PROCESSBAMFILES
-sub processBamFiles($$$$)
+sub processBamFiles($$$)
 {
     my $table = $_[0];
-    my $filesBam = $_[1];
-    my $offsets = $_[2];
-    my $dataBed = $_[3];
-
+    my $dataBed = $_[1];
+    my $filesBam = $_[2];
+    
     foreach my $fileBam (@{$filesBam})
     {
         # parse file name
         my $fileName = fileparse($fileBam);
         my $readsUsed = 0;
-
 
         # start timer
         printf(STDERR "Processing $fileName ... ");
@@ -110,30 +106,23 @@ sub processBamFiles($$$$)
 
                 my $readLinear = $bed->toLinear($readPosition);
                 next if ($readLinear < 0);
-                next if (!exists($offsets->{$fileName}{$readSpan}));
-                my $psiteOffset = $offsets->{$fileName}{$readSpan}; # add one to get the position after the offset
-                $readsUsed++;
 
-                # relative offsets
-                my $relOffsetStart = $readLinear + $psiteOffset - $bed->txThickStart - 1;
-                my $relOffsetCenter = $readLinear + $psiteOffset - $bed->txThickCenter - 1;
-                my $relOffsetEnd = $readLinear + $psiteOffset - $bed->txThickEnd - 1;
-
-                # accumulate frame
-                my $frameStart = $relOffsetStart % 3;
-                my $frameCenter = $relOffsetCenter % 3;
-                my $frameEnd = $relOffsetEnd % 3;
-
-                $table->{$fileName}{$readSpan}{"counts"}++;
-                $table->{$fileName}{$readSpan}{"frame"}{$frameStart} += 1/3;
-                $table->{$fileName}{$readSpan}{"frame"}{$frameCenter} += 1/3;
-                $table->{$fileName}{$readSpan}{"frame"}{$frameEnd} += 1/3;
+                my $offsetStart = $bed->txThickStart - $readLinear;
+                my $offsetEnd = $bed->txThickEnd - $readLinear - 6;
                 
-                $readsUsed++;
-                
-                #print $bed->strand,"\t",$readPosition,"\t",$readSpan,"\t",$readLinear,"\t",$bed->txThickStart,"\t",$psiteOffset,"\n";
+                if ((0 <= $offsetStart) && ($offsetStart <= $readSpan)) {
+                    #print $readSpan,"\t",$offsetStart,"\t",($offsetStart%3),"\n";
+                    $table->{$fileName}{$readSpan}{$offsetStart}++;
+                    $readsUsed++;
+                }
+
+                if ((0 <= $offsetEnd) && ($offsetEnd <= $readSpan)) {
+                    #print $readSpan,"\t",$offsetStart,"\t",($offsetStart%3),"\n";
+                    #$table->{$fileName}{$readSpan}{$offsetEnd}++;
+                    #$readsUsed++;
+                }
+
             }
-            #last if($readsUsed == 100);
         }
 
         # stop timer
