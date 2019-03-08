@@ -47,22 +47,26 @@ sub printTable($)
 
         foreach my $readLength (sort {$a <=> $b} keys %{$table->{$file}}) {
 
+            my %result = (
+                0 => [0, 0],
+                1 => [0, 0],
+                2 => [0, 0]
+            );
             foreach my $offset (sort {$a <=> $b} keys %{$table->{$file}{$readLength}}) {
-                print $file,"\t",$readLength,"\t",$offset,"\t",$table->{$file}{$readLength}{$offset},"\n";
+                my $frame = ($offset % 3);
+                my $counts = $table->{$file}{$readLength}{$offset};
+                
+                if ($result{$frame}[1] <= $counts) {
+                    $result{$frame}[1] = $counts;
+                    $result{$frame}[0] = $offset;
+                }
+
+                print $file,"\t",$readLength,"\t",$frame,"\t",$offset,"\t",$counts,"\n";
             }
 
-=head
-            my @values = ();
-            my $total = 0;
-            my $count = $table->{$file}{$readLength}{"counts"};
-            foreach my $frame (sort {$a <=> $b} keys %{$table->{$file}{$readLength}{"frame"}}) {
-                my $val = $table->{$file}{$readLength}{"frame"}{$frame};
-                push(@values, $val);
-                $total += $val;
-            }
-
-            print $file,"\t",$readLength,"\t",$count,"\t",$values[0]/$total,"\t",$values[1]/$total,"\t",$values[2]/$total,"\n";
-=cut
+            #print $file,"\t",$readLength,"\t","0","\t",$result{0}[0],"\t",$result{0}[1],"\n";
+            #print $file,"\t",$readLength,"\t","1","\t",$result{1}[0],"\t",$result{1}[1],"\n";
+            #print $file,"\t",$readLength,"\t","2","\t",$result{2}[0],"\t",$result{2}[1],"\n";
         }
     }
 }
@@ -92,8 +96,8 @@ sub processBamFiles($$$)
         foreach my $bed (@{$dataBed})
         {
             my @reads = $hts->get_features_by_location(-seq_id => $bed->chrom,
-                                                       -start  => $bed->thickStart,
-                                                       -end    => $bed->thickEnd);
+                                                       -start  => $bed->chromStart,
+                                                       -end    => $bed->chromEnd);
             
             my $readsCount = scalar(@reads);
             next if ($readsCount == 0);
@@ -103,23 +107,19 @@ sub processBamFiles($$$)
             {
                 my $readPosition = ($bed->strand eq "+") ? $read->start : ($read->end - 1);
                 my $readSpan = $read->query->length;
-
                 my $readLinear = $bed->toLinear($readPosition);
                 next if ($readLinear < 0);
-
-                my $offsetStart = $bed->txThickStart - $readLinear;
-                my $offsetEnd = $bed->txThickEnd - $readLinear - 6;
+                my $shift = ($bed->txThickStart - $readLinear);
+                my $steps = int($shift / $readSpan);
+                my $delta = $readLinear + $steps * $readSpan;
+                my $offset = abs($bed->txThickStart - $delta);
                 
-                if ((0 <= $offsetStart) && ($offsetStart <= $readSpan)) {
-                    #print $readSpan,"\t",$offsetStart,"\t",($offsetStart%3),"\n";
-                    $table->{$fileName}{$readSpan}{$offsetStart}++;
-                    $readsUsed++;
-                }
+                
+                #print $readLinear,"\t",$readSpan,"\t",$bed->txThickStart,"\t",$shift,"\t",$steps,"\t",$delta,"\t",$offset,"\n";
 
-                if ((0 <= $offsetEnd) && ($offsetEnd <= $readSpan)) {
-                    #print $readSpan,"\t",$offsetStart,"\t",($offsetStart%3),"\n";
-                    #$table->{$fileName}{$readSpan}{$offsetEnd}++;
-                    #$readsUsed++;
+                if ((0 <= $offset) && ($offset <= $readSpan)) {
+                    $table->{$fileName}{$readSpan}{$offset}++;
+                    $readsUsed++;
                 }
 
             }
@@ -139,18 +139,13 @@ sub loadBedFile($$)
 {
     my $dataBed = $_[0];
     my $fileBed = $_[1];
-    my %genes = ();
-
+    
     open(my $fh, "<", $fileBed) or die $!;
     while (<$fh>)
     {
         chomp($_);
         my $bed = Bed12->new();
         $bed->fromLine($_);
-        my ($transcript, $gene) = split(";", $bed->name, 2);
-        next if (exists($genes{$gene}));
-        $genes{$gene}++;
-        #next if (($bed->lengthThick < 300) || (5000 < $bed->lengthThick));
         push(@{$dataBed}, $bed);
     }
     close($fh);
@@ -169,6 +164,7 @@ sub loadPsiteTable($$)
         chomp($_);
         my ($fileName, $readLength, $offset, $score) = split("\t", $_, 4);
         $offsets->{$fileName}{$readLength} = $offset;
+       
     }
     close($fh);
 }

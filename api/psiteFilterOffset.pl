@@ -43,8 +43,8 @@ sub parseOffsetsFile($$)
     open(my $fh, "<", $fileOffsets) or die $!;
     while (<$fh>) {
         chomp($_);
-        my ($fileName, $readLength, $offset, $score) = split("\t", $_, 4);
-        $table->{$fileName}{$score} = [$readLength, $offset];
+        my ($fileName, $readLength, $frame, $offset, $score) = split("\t", $_, 5);
+        $table->{$fileName}{$score} = [$readLength, $frame, $offset];
     }
     close($fh);
 }

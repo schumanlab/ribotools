@@ -103,21 +103,27 @@ sub processBamFiles($$$$)
             {
                 my $readPosition = ($bed->strand eq "+") ? $read->start : ($read->end - 1);
                 my $readSpan = $read->query->length;
-
                 my $readLinear = $bed->toLinear($readPosition);
                 next if ($readLinear < 0);
-                next if (!exists($offsets->{$fileName}{$readSpan}));
-                my $psiteOffset = $offsets->{$fileName}{$readSpan}; # add one to get the position after the offset
-                $readsUsed++;
-
-                # relative offsets
-                my $relOffsetStart = $readLinear + $psiteOffset - $bed->txThickStart - 1;
-                my $relOffsetCenter = $readLinear + $psiteOffset - $bed->txThickCenter - 1;
-                my $relOffsetEnd = $readLinear + $psiteOffset - $bed->txThickEnd - 1;
+                my $frameTest = abs($bed->txThickStart - $readLinear) % 3;
+                my $frame = 0 if($frameTest == 0);
+                $frame = 1 if($frameTest == 2);
+                $frame = 2 if($frameTest == 1);
 
                 # debug
                 #print $readSpan,"\t",$readLinear,"\t",$psiteOffset,"\t",$relOffsetStart,"\t",$relOffsetCenter,"\t",$relOffsetEnd,"\n";
 
+
+                next if(!exists($offsets->{$fileName}{$readSpan}));
+                my $psiteOffset =  exists($offsets->{$fileName}{$readSpan}{$frame}) ? $offsets->{$fileName}{$readSpan}{$frame} : 0; # add one to get the position after the offset
+                $readsUsed++;
+
+                # relative offsets
+                my $relOffsetStart = $readLinear + $psiteOffset - $bed->txThickStart;
+                my $relOffsetCenter = $readLinear + $psiteOffset - $bed->txThickCenter;
+                my $relOffsetEnd = $readLinear + $psiteOffset - $bed->txThickEnd;
+
+                
                 # accumulate position
                 if ((-25 <= $relOffsetStart) && ($relOffsetStart <= 75)) {
                     $coverageStart[$relOffsetStart + 25] += $depthScore;
@@ -133,11 +139,11 @@ sub processBamFiles($$$$)
 
                 # accumulate frame
                 my $frameStart = $relOffsetStart % 3;
-                my $frameCenter = $relOffsetCenter % 3;
-                my $frameEnd = $relOffsetEnd % 3;
+                #my $frameCenter = $relOffsetCenter % 3;
+                #my $frameEnd = $relOffsetEnd % 3;
                 $frame[$frameStart] += $depthScore;
-                $frame[$frameCenter] += $depthScore;
-                $frame[$frameEnd] += $depthScore;
+                #$frame[$frameCenter] += $depthScore;
+                #$frame[$frameEnd] += $depthScore;
 
             }
             #last;
@@ -160,18 +166,13 @@ sub loadBedFile($$)
 {
     my $dataBed = $_[0];
     my $fileBed = $_[1];
-    my %genes = ();
-
+    
     open(my $fh, "<", $fileBed) or die $!;
     while (<$fh>)
     {
         chomp($_);
         my $bed = Bed12->new();
         $bed->fromLine($_);
-        my ($transcript, $gene) = split(";", $bed->name, 2);
-        next if (exists($genes{$gene}));
-        $genes{$gene}++;
-        #next if (($bed->lengthThick < 300) || (5000 < $bed->lengthThick));
         push(@{$dataBed}, $bed);
     }
     close($fh);
@@ -188,8 +189,10 @@ sub loadPsiteTable($$)
     while (<$fh>)
     {
         chomp($_);
-        my ($fileName, $readLength, $offset, $score) = split("\t", $_, 4);
-        $offsets->{$fileName}{$readLength} = $offset;
+        
+        next if($_ =~ m/^#/);
+        my ($fileName, $readLength, $frame, $offset, $score) = split("\t", $_, 5);
+        $offsets->{$fileName}{$readLength}{$frame} = $offset;
     }
     close($fh);
 }
