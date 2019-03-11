@@ -52,16 +52,17 @@ sub printTable($)
                 1 => [0, 0],
                 2 => [0, 0]
             );
-            foreach my $offset (sort {$a <=> $b} keys %{$table->{$file}{$readLength}}) {
+            foreach my $offset (sort {$a <=> $b} keys %{$table->{$file}{$readLength}{"all"}}) {
                 my $frame = ($offset % 3);
-                my $counts = $table->{$file}{$readLength}{$offset};
+                my $counts = $table->{$file}{$readLength}{"all"}{$offset};
+                my $ref = exists($table->{$file}{$readLength}{"ref"}{$offset}) ? $table->{$file}{$readLength}{"ref"}{$offset} : 0;
                 
                 if ($result{$frame}[1] <= $counts) {
                     $result{$frame}[1] = $counts;
                     $result{$frame}[0] = $offset;
                 }
 
-                print $file,"\t",$readLength,"\t",$frame,"\t",$offset,"\t",$counts,"\n";
+                print $file,"\t",$readLength,"\t",$frame,"\t",$offset,"\t",$counts,"\t",$ref,"\n";
             }
 
             #print $file,"\t",$readLength,"\t","0","\t",$result{0}[0],"\t",$result{0}[1],"\n";
@@ -105,6 +106,7 @@ sub processBamFiles($$$)
 
             foreach my $read (@reads)
             {
+                next if($read->qual != 255);
                 my $readPosition = ($bed->strand eq "+") ? $read->start : ($read->end - 1);
                 my $readSpan = $read->query->length;
                 my $readLinear = $bed->toLinear($readPosition);
@@ -116,9 +118,13 @@ sub processBamFiles($$$)
                 
                 
                 #print $readLinear,"\t",$readSpan,"\t",$bed->txThickStart,"\t",$shift,"\t",$steps,"\t",$delta,"\t",$offset,"\n";
+                if ((0 <= $shift) && ($shift <= $readSpan)) {
+                    $table->{$fileName}{$readSpan}{"ref"}{$shift}++;
+                    #$readsUsed++;
+                }
 
                 if ((0 <= $offset) && ($offset <= $readSpan)) {
-                    $table->{$fileName}{$readSpan}{$offset}++;
+                    $table->{$fileName}{$readSpan}{"all"}{$offset}++;
                     $readsUsed++;
                 }
 
