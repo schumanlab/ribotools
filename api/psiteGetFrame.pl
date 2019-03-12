@@ -44,12 +44,13 @@ sub printTable($)
 
     foreach my $file (sort keys %{$table}) {
         foreach my $span (sort {$a <=> $b} keys %{$table->{$file}}) {
-            my $frame0 = exists($table->{$file}{$span}{0}) ? $table->{$file}{$span}{0} : 0;
-            my $frame1 = exists($table->{$file}{$span}{1}) ? $table->{$file}{$span}{1} : 0;
-            my $frame2 = exists($table->{$file}{$span}{2}) ? $table->{$file}{$span}{2} : 0;
+            my $frame0 = exists($table->{$file}{$span}{"frame"}{0}) ? $table->{$file}{$span}{"frame"}{0} : 0;
+            my $frame1 = exists($table->{$file}{$span}{"frame"}{1}) ? $table->{$file}{$span}{"frame"}{1} : 0;
+            my $frame2 = exists($table->{$file}{$span}{"frame"}{2}) ? $table->{$file}{$span}{"frame"}{2} : 0;
             my $total = $frame0 + $frame1 + $frame2;
+            my $count = $table->{$file}{$span}{"hist"};
 
-            print $file,"\t",$span,"\t",$frame0/$total,"\t",$frame1/$total,"\t",$frame2/$total,"\n";
+            print $file,"\t",$span,"\t",$count,"\t",$frame0/$total,"\t",$frame1/$total,"\t",$frame2/$total,"\n";
         }
         
     }
@@ -92,7 +93,8 @@ sub processBamFiles($$$)
                 next if ($readLinear < 0);
                 my $offset = $bed->txThickStart - $readLinear;
                 my $frame = abs($offset) % 3;
-                $table->{$fileName}{$readSpan}{$frame}++;
+                $table->{$fileName}{$readSpan}{"frame"}{$frame}++;
+                $table->{$fileName}{$readSpan}{"hist"}++;
                 $readsUsed++;
             }
             

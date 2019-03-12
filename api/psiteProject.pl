@@ -75,7 +75,7 @@ sub processBamFiles($$$$)
     {
         my $fileName = fileparse($fileBam);
         my $readsUsed = 0;
-        my @frame = (0) x 3;
+        my @frameList = (0) x 3;
         my @coverageStart = (0) x 101;
         my @coverageCenter = (0) x 101;
         my @coverageEnd = (0) x 101;
@@ -105,17 +105,14 @@ sub processBamFiles($$$$)
                 my $readSpan = $read->query->length;
                 my $readLinear = $bed->toLinear($readPosition);
                 next if ($readLinear < 0);
-                my $frameTest = abs($bed->txThickStart - $readLinear) % 3;
-                my $frame = 0 if($frameTest == 0);
-                $frame = 1 if($frameTest == 2);
-                $frame = 2 if($frameTest == 1);
+                
 
                 # debug
                 #print $readSpan,"\t",$readLinear,"\t",$psiteOffset,"\t",$relOffsetStart,"\t",$relOffsetCenter,"\t",$relOffsetEnd,"\n";
 
 
                 next if(!exists($offsets->{$fileName}{$readSpan}));
-                my $psiteOffset =  exists($offsets->{$fileName}{$readSpan}{$frame}) ? $offsets->{$fileName}{$readSpan}{$frame} : 0; # add one to get the position after the offset
+                my $psiteOffset =  exists($offsets->{$fileName}{$readSpan}) ? $offsets->{$fileName}{$readSpan} : 0; # add one to get the position after the offset
                 $readsUsed++;
 
                 # relative offsets
@@ -138,18 +135,15 @@ sub processBamFiles($$$$)
                 }
 
                 # accumulate frame
-                my $frameStart = $relOffsetStart % 3;
-                #my $frameCenter = $relOffsetCenter % 3;
-                #my $frameEnd = $relOffsetEnd % 3;
-                $frame[$frameStart] += $depthScore;
-                #$frame[$frameCenter] += $depthScore;
-                #$frame[$frameEnd] += $depthScore;
+                my $frame = $relOffsetStart % 3;
+                $frameList[$frame] += $depthScore;
+                
 
             }
             #last;
         }
 
-        $table->{$fileName} = [\@frame, \@coverageStart, \@coverageCenter, \@coverageEnd];
+        $table->{$fileName} = [\@frameList, \@coverageStart, \@coverageCenter, \@coverageEnd];
 
         # stop timer
         my $toc = time();
@@ -191,8 +185,8 @@ sub loadPsiteTable($$)
         chomp($_);
         
         next if($_ =~ m/^#/);
-        my ($fileName, $readLength, $frame, $offset, $score) = split("\t", $_, 5);
-        $offsets->{$fileName}{$readLength}{$frame} = $offset;
+        my ($fileName, $readLength, $offset) = split("\t", $_, 3);
+        $offsets->{$fileName}{$readLength} = $offset;
     }
     close($fh);
 }
