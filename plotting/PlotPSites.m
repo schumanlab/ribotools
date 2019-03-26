@@ -5,9 +5,9 @@ close all
 
 
 %% read data
-data = readPSiteTable('/Users/tushevg/Desktop/Periodicity/resultPeriodicity_12Mar2019.txt');
+data = readPSiteTable('/Users/tushevg/Desktop/resultPeriodicity_SomataMono_16Mar2019.txt');
 idx = false(length(data.file), 1);
-idx(4:6) = true;
+idx(1:3) = true;
 
 
 %% Plot Psites
@@ -65,7 +65,7 @@ xlabel(ax,'frame');
 ylabel(ax,'(observed - expected) / expected');
 
 
-print(gcf,'-dsvg','-r300','figurePeriodicity_NplPoly_13Mar2019.svg');
+print(gcf,'-dsvg','-r300','/Users/tushevg/Desktop/figurePeriodicity_SmtMonoEnriched_16Mar2019.svg');
 
 
 
