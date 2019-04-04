@@ -5,7 +5,7 @@ close all
 
 
 %% read data
-data = readPSiteTable('/Users/tushevg/Desktop/resultPeriodicity_SomataMono_16Mar2019.txt');
+data = readPSiteTable('/Users/tushevg/Desktop/psiteProject_SomataMonoEnriched_01Apr2019.txt');
 idx = false(length(data.file), 1);
 idx(1:3) = true;
 
@@ -39,7 +39,7 @@ ylabel('normalized p-site coverage');
 
 %% Plot Frame
 pos = get(gca,'Position');
-pos(1) = pos(1) + pos(3)/1.5;
+pos(1) = pos(1) + pos(3)/1.9;
 pos(2) = pos(2) + pos(4)/1.6;
 pos(3) = pos(3)/4;
 pos(4) = pos(4)/3;
@@ -65,7 +65,7 @@ xlabel(ax,'frame');
 ylabel(ax,'(observed - expected) / expected');
 
 
-print(gcf,'-dsvg','-r300','/Users/tushevg/Desktop/figurePeriodicity_SmtMonoEnriched_16Mar2019.svg');
+print(gcf,'-dsvg','-r300','/Users/tushevg/Desktop/figurePeriodicity_SomataMonoEnriched_01Apr2019.svg');
 
 
 
