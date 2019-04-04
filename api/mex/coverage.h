@@ -14,7 +14,7 @@ public:
     explicit Coverage(char *fileName);
     ~Coverage();
 
-    void query(int32_t *track, int32_t chromStart, int32_t trackSize);
+    void query(char *chrom, int32_t chromStart, int32_t chromEnd);
 
 private:
     kstring_t m_buffer;
