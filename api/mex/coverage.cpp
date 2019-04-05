@@ -38,7 +38,7 @@ Coverage::~Coverage()
 }
 
 
-void Coverage::query(char *chrom, int32_t chromStart, int32_t chromEnd)
+void Coverage::query(int32_t *track, char *chrom, int32_t chromStart, int32_t chromEnd)
 {
     int32_t tid = tbx_name2id(m_handleIndex, chrom);
     if (tid == -1) {
@@ -53,11 +53,22 @@ void Coverage::query(char *chrom, int32_t chromStart, int32_t chromEnd)
     }
     
     int32_t counter = 0;
+    auto gbed = GbedRecord();
+    
     while(tbx_itr_next(m_handleFile, m_handleIndex, m_iterator, &m_buffer) >= 0) {
         counter++;
+        auto ss = std::stringstream(m_buffer.s);
+        ss >> gbed;
+        //std::cout << gbed.chrom << ":" << gbed.chromStart << "-" << gbed.chromEnd << " > " << gbed.depth << std::endl;
+        
+        for (int32_t k = gbed.chromStart; k < gbed.chromEnd; ++k) {
+            int32_t idx = k - chromStart;
+            track[idx] = gbed.depth;
+        }
+        
     }
     
-    std::cout << "Coverage::Query: " << chrom << ":" << chromStart << "-" << chromEnd << " " << counter << std::endl;    
+    //std::cout << "Coverage::Query: " << chrom << ":" << chromStart << "-" << chromEnd << " " << counter << std::endl;    
 }
 
 
@@ -112,20 +123,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         mxGetString(prhs[2], chrom, sizeof(chrom));
         int32_t chromStart = (int32_t)*mxGetPr(prhs[3]);
         int32_t chromEnd = (int32_t)*mxGetPr(prhs[4]);
-        //int32_t *track;
-        //plhs[0] = mxCreateNumericMatrix(1, trackSize, mxINT32_CLASS, mxREAL);
-        //track = (int32_t*)mxGetPr(plhs[0]);
-        //track[0] = 1;
-        //track[1] = 2;
-
-        // Call the method
-        //obj->query(track, chromStart, trackSize);
-        obj->query(chrom, chromStart, chromEnd);
+        int32_t chromSize = chromEnd - chromStart;
+        int32_t *track;
+        plhs[0] = mxCreateNumericMatrix(chromSize, 1, mxINT32_CLASS, mxREAL);
+        track = (int32_t*)mxGetPr(plhs[0]);
         
-        // return result
-        mexPrintf("chrom = %s\n", chrom);
-        mexPrintf("chromStart = %d\n", chromStart);
-        mexPrintf("chromEnd = %d\n", chromEnd);
+        // Call the method
+        obj->query(track, chrom, chromStart, chromEnd);
         
         return;
     }
