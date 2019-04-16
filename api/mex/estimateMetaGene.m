@@ -15,7 +15,7 @@ idx = zeros(length(bed),1);
 
 idxshort = metainfo(:,2) <= 3;
 idxlong = metainfo(:,2) > 3;
-bin = 400;
+bin = 800;
 data = zeros(1, bin, nfiles);
 i = 0;
 
@@ -83,11 +83,77 @@ for k = 1 : length(bed)
     %}
 end
 
-%%
-%
+%% normalize to 0-time point
+baseShort = squeeze(median(data(:,:,1:3), 3));
+baseLong = squeeze(median(data(:,:,4:6), 3));
+idxshort = metainfo(:,2) <= 3;
+idxlong = metainfo(:,2) > 3;
+dataShort = bsxfun(@rdivide, data(:,:,idxshort), baseShort);
+dataLong = bsxfun(@rdivide, data(:,:,idxlong), baseLong);
+
+data0 = median(mean(cat(3, dataShort(:,:,1:3), dataLong(:,:,1:3)), 3), 1);
+data15 = median(mean(dataShort(:,:,4:6), 3), 1);
+data30 = median(mean(dataShort(:,:,7:9), 3), 1);
+data45 = median(mean(dataShort(:,:,10:12), 3), 1);
+data90 = median(mean(dataLong(:,:,4:6), 3), 1);
+data120 = median(mean(dataLong(:,:,7:9), 3), 1);
+data150 = median(mean(dataLong(:,:,10:12), 3), 1);
+
+thresh_x = 50;
+thresh_y = 0.85;%data15(thresh_x);
+
+figure('color','w');
+hold on;
+plot([0,800],[1,1],'color',[.25,.25,.25]);
+plot([0,800],[thresh_y, thresh_y],'color',[.25,.25,.25]);
+plot([thresh_x,thresh_x],[0,1.5], 'color', [.25, .25, .25]);
+h(1) = plot(data0,'linewidth',1.2);
+h(2) = plot(data15,'linewidth',1.2);
+h(3) = plot(data30,'linewidth',1.2);
+h(4) = plot(data45,'linewidth',1.2);
+h(5) = plot(data90,'linewidth',1.2);
+h(6) = plot(data120,'linewidth',1.2);
+h(7) = plot(data150,'linewidth',1.2);
+
+hold off;
+hl = legend(h, '0 sec', '15 sec', '30 sec', '45 sec', '90 sec', '120 sec', '150 sec');
+set(hl, 'edgecolor', 'w', 'location', 'southeast', 'fontsize', 14);
+set(gca,'fontsize',14);
+xlabel('codons','fontsize',14);
+ylabel('normalized coverage','fontsize',14);
+print(gcf, '-dsvg', '-r300', 'fiture_AvgTranslationRateMetaGene_12Apr2019.svg');
+
+
+x = (1:800);
+y = zeros(6,1);
+y(1) = find(data15 >= thresh_y & x >= thresh_x, 1, 'first');
+y(2) = find(data30 >= thresh_y & x >= thresh_x, 1, 'first');
+y(3) = find(data45 >= thresh_y & x >= thresh_x, 1, 'first');
+y(4) = find(data90 >= thresh_y & x >= thresh_x, 1, 'first');
+y(5) = find(data120 >= thresh_y & x >= thresh_x, 1, 'first');
+y(6) = find(data150 >= thresh_y & x >= thresh_x, 1, 'first');
+
+t = unique(metainfo(:,1));
+t(1) = [];
+p = polyfit(t, y, 1);
+tfit = linspace(5,t(end), 100);
+yfit = polyval(p, tfit);
+figure('color','w');
+hold on;
+plot(tfit, yfit, 'color', [.65,.65,.65]);
+plot(t, y, 'k.', 'markersize', 12);
+hold off;
+set(gca,'box','off','xlim',[0,150],'xtick',t,'ylim',[0,450],'fontsize',14);
+xlabel('time [sec]','fontsize',14);
+ylabel('crossing point [codons]','fontsize',14);
+text(15, 400, sprintf('y(t) = %.4f * t - %.4f\nR^2 = %.4f',p(1), abs(p(2)), corr(t,y).^2),'fontsize',14);
+print(gcf, '-dsvg', '-r300', 'fiture_AvgTranslationRateSlope_12Apr2019.svg');
+
+
+%{
 dt = metainfo(:,1);
 dt(4:6) = 1;
-tmp = squeeze(median(data, 1));
+tmp = squeeze(mean(data, 1));
 tu = unique(dt);
 mtx = zeros(bin, length(tu));
 for t = 1 : length(tu)
@@ -106,8 +172,10 @@ B = bsxfun(@rdivide, mtx(:,[2,6,7,8]), mtx(:,2));
 
 figure('color','w');
 plot([A,B]);
+%}
 
 %% calculate average slope
+%{
 thresh = linspace(0.4, 0.9, 100);
 crr = zeros(length(thresh), 1);
 slp = zeros(length(thresh), 1);
@@ -146,7 +214,7 @@ pshort = polyfit(tu(idxshort), c(idxshort), 1);
 plong = polyfit(tu(idxlong), c(idxlong), 1);
 p = polyfit(tu, c, 1);
 
-
+%}
 
 %% read bed file
 %{
