@@ -38,11 +38,13 @@ Coverage::~Coverage()
 }
 
 
-void Coverage::query(int32_t *track, char *chrom, int32_t chromStart, int32_t chromEnd)
+void Coverage::query(int32_t *track, int32_t *counts, char *chrom, int32_t chromStart, int32_t chromEnd)
 {
+    counts[0] = 0;
+    int32_t chromSize = chromEnd - chromStart;
     int32_t tid = tbx_name2id(m_handleIndex, chrom);
     if (tid == -1) {
-        std::cerr << "Coverage::Query: the sequence not present in this file " << chrom << std::endl;
+        //std::cerr << "Coverage::Query: the sequence not present in this file " << chrom << std::endl;
         return;
     }
     
@@ -52,21 +54,23 @@ void Coverage::query(int32_t *track, char *chrom, int32_t chromStart, int32_t ch
         return;
     }
     
-    int32_t counter = 0;
-    auto gbed = GbedRecord();
+    
+    auto bed = BedReduced();
     
     while(tbx_itr_next(m_handleFile, m_handleIndex, m_iterator, &m_buffer) >= 0) {
-        counter++;
+        counts[0]++;
         auto ss = std::stringstream(m_buffer.s);
-        ss >> gbed;
+        ss >> bed;
         //std::cout << gbed.chrom << ":" << gbed.chromStart << "-" << gbed.chromEnd << " > " << gbed.depth << std::endl;
         
-        for (int32_t k = gbed.chromStart; k < gbed.chromEnd; ++k) {
+        for (int32_t k = bed.chromStart; k < bed.chromEnd; ++k) {
             int32_t idx = k - chromStart;
-            track[idx] = gbed.depth;
+            if ((0 <= idx) && (idx < chromSize))
+                track[idx]++;
         }
         
     }
+    
     
     //std::cout << "Coverage::Query: " << chrom << ":" << chromStart << "-" << chromEnd << " " << counter << std::endl;    
 }
@@ -125,11 +129,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[])
         int32_t chromEnd = (int32_t)*mxGetPr(prhs[4]);
         int32_t chromSize = chromEnd - chromStart;
         int32_t *track;
+        int32_t *counts;
         plhs[0] = mxCreateNumericMatrix(chromSize, 1, mxINT32_CLASS, mxREAL);
+        plhs[1] = mxCreateNumericMatrix(1, 1, mxINT32_CLASS, mxREAL);
         track = (int32_t*)mxGetPr(plhs[0]);
+        counts = (int32_t*)mxGetPr(plhs[1]);
         
         // Call the method
-        obj->query(track, chrom, chromStart, chromEnd);
+        obj->query(track, counts, chrom, chromStart, chromEnd);
         
         return;
     }

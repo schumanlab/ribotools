@@ -4,10 +4,10 @@ clear variables
 close all
 
 %% compile
-mex coverage.cpp gbedrecord.cpp -I/usr/local/include -L/usr/local/lib -lhts;
+mex coverage.cpp -I/usr/local/include -L/usr/local/lib -lhts;
 
 %% fileList
-fileList = ls('/Users/tushevg/Desktop/data/timepoints/*.gbed.gz');
+fileList = ls('/Users/tushevg/Desktop/*.bed.gz');
 fileList(end) = [];
 fileList = regexp(fileList, '\n', 'split')';
 nFiles = length(fileList);
@@ -26,7 +26,7 @@ txSpan = txEnd - txStart;
 tracks = zeros(nFiles, txSpan, 'int32');
 tic
 for k = 1 : nFiles
-    tracks(k,:) = coverage('query', handles(k), txName, txStart, txEnd);
+    [tracks(k,:),tmp] = coverage('query', handles(k), txName, txStart, txEnd);
 end
 toc
 

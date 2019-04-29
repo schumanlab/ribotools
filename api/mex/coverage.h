@@ -3,7 +3,7 @@
 
 #include "mex.h"
 #include "class_handle.h"
-#include "gbedrecord.h"
+#include "bedreduced.h"
 #include <iostream>
 #include <htslib/hts.h>
 #include <htslib/tbx.h>
@@ -15,7 +15,7 @@ public:
     explicit Coverage(char *fileName);
     ~Coverage();
 
-    void query(int32_t *track, char *chrom, int32_t chromStart, int32_t chromEnd);
+    void query(int32_t *track, int32_t *counts, char *chrom, int32_t chromStart, int32_t chromEnd);
 
 private:
     kstring_t m_buffer;
