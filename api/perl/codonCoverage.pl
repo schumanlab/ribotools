@@ -32,10 +32,6 @@ MAIN:
     $toc = time();
     printf(STDERR "Parsed %d BAM files in %.4f sec.\n", scalar(@filesBam), $toc - $tic);
 
-
-
-
-
 }
 
 ### PROCESSBAMFILES
@@ -49,8 +45,8 @@ sub processBamFiles($$$)
 
         my $fileName = fileparse($fileBam);
         $fileName =~ s/_transcriptome_sorted_umi.bam//g;
-        my $fileOut = $pathTrack . $fileName . ".txt.gz";
-        open(my $fh, "| sort -k1,1 -k3,3n -k4,4n | bgzip > $fileOut") or die $!;
+        my $fileOut = $pathTrack . $fileName . ".bed.gz";
+        open(my $fh, "| sort -k1,1 -k2,2n -k3,3n | bgzip > $fileOut") or die $!;
         my $readsUsed = 0;
 
         my @offsetNext = ([0, 2, 1], [1, 0, 2], [2, 1, 0]);
@@ -73,29 +69,17 @@ sub processBamFiles($$$)
             next if (scalar(@reads) == 0);
 
             my $indexCDS = ($bed->txThickStart % 3);
-            my %track = ();
         
             foreach my $read (@reads) {
 
                 my $readStart = $read->start + $offsetNext[$indexCDS][($read->start % 3)];
                 my $readEnd = $read->end + $offsetPrev[$indexCDS][$read->end % 3];
-                
-                for (my $base = $readStart; $base <= $readEnd; $base++) {
-                    $track{$base}++;
-                }
+                print $fh $transcript,"\t",$readStart,"\t",$readEnd,"\n";
             }
-
-            print $fh $transcript,"\t",$gene,"\t",$bed->txThickStart,"\t",$bed->txThickEnd,"\t",$bed->lengthChrom,"\t";
-            foreach my $base (sort {$a <=> $b} keys %track) {
-                print $fh $base,",",$track{$base},",";
-            }
-            print $fh "\n";
-
-            
         }
 
         close($fh);
-        system("tabix --zero-based --sequence 1 --begin 3 --end 4 $fileOut");
+        system("tabix --zero-based --sequence 1 --begin 2 --end 3 $fileOut");
 
         # stop timer
         my $toc = time();
