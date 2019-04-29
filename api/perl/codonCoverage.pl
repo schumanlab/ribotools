@@ -9,10 +9,11 @@ use File::Basename;
 use Bed12;
 
 sub loadBedFile($$);
-sub processBamFiles($$);
+sub processBamFiles($$$);
 
 MAIN:
 {
+    my $pathTrack = shift;
     my $fileBed = shift;
     my @filesBam = @ARGV;
     my @dataBed = ();
@@ -27,7 +28,7 @@ MAIN:
 
     # process bam files
     $tic = time();
-    processBamFiles(\@filesBam, \@dataBed);
+    processBamFiles(\@filesBam, \@dataBed, $pathTrack);
     $toc = time();
     printf(STDERR "Parsed %d BAM files in %.4f sec.\n", scalar(@filesBam), $toc - $tic);
 
@@ -38,14 +39,18 @@ MAIN:
 }
 
 ### PROCESSBAMFILES
-sub processBamFiles($$)
+sub processBamFiles($$$)
 {
     my $filesBam = $_[0];
     my $dataBed = $_[1];
+    my $pathTrack = $_[2];
 
     foreach my $fileBam (@{$filesBam}) {
 
         my $fileName = fileparse($fileBam);
+        $fileName =~ s/_transcriptome_sorted_umi.bam//g;
+        my $fileOut = $pathTrack . $fileName . ".txt.gz";
+        open(my $fh, "| sort -k1,1 -k3,3n -k4,4n | bgzip > $fileOut") or die $!;
         my $readsUsed = 0;
 
         my @offsetNext = ([0, 2, 1], [1, 0, 2], [2, 1, 0]);
@@ -78,14 +83,17 @@ sub processBamFiles($$)
                 }
             }
 
-            print $transcript,"\t",$gene,"\t",$bed->txThickStart,"\t",$bed->txThickEnd,"\t",$bed->lengthChrom,"\t";
+            print $fh $transcript,"\t",$gene,"\t",$bed->txThickStart,"\t",$bed->txThickEnd,"\t",$bed->lengthChrom,"\t";
             foreach my $base (sort {$a <=> $b} keys %track) {
-                print $base,",",$track{$base},",";
+                print $fh $base,",",$track{$base},",";
             }
-            print "\n";
+            print $fh "\n";
 
-            last;
+            
         }
+
+        close($fh);
+        system("tabix --zero-based --sequence 1 --begin 3 --end 4 $fileOut");
 
     }
 }
