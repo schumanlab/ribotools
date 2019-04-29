@@ -70,6 +70,8 @@ sub processBamFiles($$$)
                                                        -start  => 0,
                                                        -end    => $bed->lengthChrom);
 
+            next if (scalar(@reads) == 0);
+
             my $indexCDS = ($bed->txThickStart % 3);
             my %track = ();
         
@@ -94,6 +96,10 @@ sub processBamFiles($$$)
 
         close($fh);
         system("tabix --zero-based --sequence 1 --begin 3 --end 4 $fileOut");
+
+        # stop timer
+        my $toc = time();
+        printf(STDERR "done in %.4f sec. Reads used: %d\n", ($toc - $tic), $readsUsed);
 
     }
 }
