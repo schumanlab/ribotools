@@ -48,7 +48,7 @@ for k = 1 : length(bed)
         [tracks(f,:), counts(f,1)] = coverage('query', handles(f), qName, qStart, qEnd);
     end
     
-    if 5*sum(counts(1:6)) / (6 * cdsSpan(k)) < 2
+    if 15*sum(counts(1:6)) / (6 * cdsSpan(k)) < 2
         continue;
     end
     
