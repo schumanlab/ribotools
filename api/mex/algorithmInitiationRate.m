@@ -2,12 +2,89 @@
 clc
 close all
 
+%% load tracks
 %{
 clear variables
-load dataTracks_TimePoints.mat;
+load /Users/tushevg/Desktop/data/timepoints/dataTracks_17Apr2019.mat;
 %}
-clearvars -except bed;
+clearvars -except data metainfo;
 
+%% load library sizes
+libsize = loadLibrarySizes('/Users/tushevg/Desktop/data/timepoints/librarySizes_03May2019.txt');
+
+%% load RNA expression
+cpm = loadRNAexpression('/Users/tushevg/Desktop/data/timepoints/elongationRate_totalRNAcpm_03May2019.txt');
+
+%% compile matrix
+nGenes = length(data);
+
+counts = zeros(nGenes,6);
+codons = zeros(nGenes,6);
+rnas = zeros(nGenes,6);
+for g = 1 : nGenes
+    name = data(g).gene;
+    counts(g,:) = double([data(g).counts(4:6)',data(g).counts(10:12)']);
+    
+    tracks = double([data(g).tracks(4:6,:);
+                     data(g).tracks(10:12,:)]);
+    
+    for t = 1 : size(tracks,1)
+        
+        tmp = sum(reshape(tracks(t,:), 3, size(tracks,2)/3),1);
+        tmp = movmean(tmp, 5);
+        codons(g,t) = sum(tmp(1:5));
+    end
+    
+    idxCpm = strcmp(name, cpm.name);
+    rnas(g,:) = [cpm.counts(idxCpm,4:6),cpm.counts(idxCpm,10:12)] + 1;
+end
+
+[ncounts, fctr] = DESeqNormalization(counts);
+%ncounts = bsxfun(@times, counts, libsize.factor([4:6,22:24])');
+cpmFactor = bsxfun(@rdivide, mean(rnas, 2), rnas);
+ncounts = ncounts .* cpmFactor;
+
+initRate = (ncounts(:,4:6) - ncounts(:,1:3))./150;
+%initRate = max(initRate,[],2);
+
+fw = fopen('initiationTest_03May2019.txt','w');
+tmp = [{data.gene}',num2cell(initRate)]';
+fprintf(fw,'%s\t%.4f\t%.4f\t%.4f\n',tmp{:});
+
+fclose(fw);
+
+
+
+%% FUNCTIONS
+
+function cpm = loadRNAexpression(filename)
+
+    fh = fopen(filename, 'r');
+    hdr = fgetl(fh);
+    hdr = regexp(hdr, '\t', 'split');
+    hdr = cell2mat(cellfun(@(x) {sscanf(x,'T%ds_%d')'}, hdr(2:end))');
+    txt = textscan(fh, '%s %n %n %n %n %n %n %n %n %n %n %n %n', 'delimiter', '\t');
+    fclose(fh);
+    cpm.name = txt{1};
+    cpm.header = hdr;
+    cpm.counts = [txt{2:end}];
+    
+end
+
+
+function libsize = loadLibrarySizes(filename)
+
+    fh = fopen(filename, 'r');
+    txt = textscan(fh, '%n %n %n', 'delimiter', '\t');
+    fclose(fh);
+    libsize.timepoint = txt{1};
+    libsize.replica = txt{2};
+    libsize.counts = txt{3};
+    libsize.factor = mean(libsize.counts) ./ libsize.counts;
+
+end
+
+%{
 %% bed names
 names = {bed.gene}';
 
@@ -92,6 +169,6 @@ cdsSpan = [bed.cdsSpan]';
 [~,idxIntersect] = intersect(name, list);
 idxList = false(length(name), 1);
 idxList(idxIntersect) = true;
-
+%}
 
 
