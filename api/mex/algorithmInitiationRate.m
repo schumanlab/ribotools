@@ -13,18 +13,21 @@ clearvars -except data metainfo;
 libsize = loadLibrarySizes('/Users/tushevg/Desktop/data/timepoints/librarySizes_03May2019.txt');
 
 %% load RNA expression
-cpm = loadRNAexpression('/Users/tushevg/Desktop/data/timepoints/elongationRate_totalRNAcpm_03May2019.txt');
+rna = loadRNAexpression('/Users/tushevg/Desktop/data/timepoints/elongationRate_RNA_apprisCountsMatrix.txt');
+
 
 %% compile matrix
+%
 nGenes = length(data);
 
-counts = zeros(nGenes,6);
-codons = zeros(nGenes,6);
+counts = zeros(nGenes, 6);
+codons = zeros(nGenes, 6);
+avg = zeros(nGenes, 6);
 rnas = zeros(nGenes,6);
+L = zeros(nGenes, 1);
 for g = 1 : nGenes
     name = data(g).gene;
     counts(g,:) = double([data(g).counts(4:6)',data(g).counts(10:12)']);
-    
     tracks = double([data(g).tracks(4:6,:);
                      data(g).tracks(10:12,:)]);
     
@@ -33,25 +36,35 @@ for g = 1 : nGenes
         tmp = sum(reshape(tracks(t,:), 3, size(tracks,2)/3),1);
         tmp = movmean(tmp, 5);
         codons(g,t) = sum(tmp(1:5));
+        avg(g,t) = mean(tmp) + 1;
     end
     
-    idxCpm = strcmp(name, cpm.name);
-    rnas(g,:) = [cpm.counts(idxCpm,4:6),cpm.counts(idxCpm,10:12)] + 1;
+    L(g) = size(tracks, 2)/3;
+    %idxCpm = strcmp(name, rna.name);
+    %rnas(g,:) = [rna.counts(idxCpm,1:3),rna.counts(idxCpm,10:12)] + 1;
 end
 
-[ncounts, fctr] = DESeqNormalization(counts);
-%ncounts = bsxfun(@times, counts, libsize.factor([4:6,22:24])');
-cpmFactor = bsxfun(@rdivide, mean(rnas, 2), rnas);
-ncounts = ncounts .* cpmFactor;
+[ncounts, factorDepth] = DESeqNormalization(counts);
+ncodons = bsxfun(@rdivide, codons, factorDepth);
+%factorRNA = bsxfun(@rdivide, mean(rnas, 2), rnas);
+%ncodons = ncodons .* factorRNA;
 
-initRate = (ncounts(:,4:6) - ncounts(:,1:3))./150;
+nrate = codons;
+
+%ncodons = codons ./ avg;
+initRate = (ncodons(:,4:6) - ncodons(:,1:3))./150;
+initRateTest = (nrate(:,4:6) - nrate(:,1:3))./150;
 %initRate = max(initRate,[],2);
 
-fw = fopen('initiationTest_03May2019.txt','w');
+names = {data.gene}';
+idx = strcmp('Camk2a', names);
+%}
+%
+fw = fopen('initiationTest_DepthNorm_06May2019.txt','w');
 tmp = [{data.gene}',num2cell(initRate)]';
 fprintf(fw,'%s\t%.4f\t%.4f\t%.4f\n',tmp{:});
-
 fclose(fw);
+%}
 
 
 
@@ -63,11 +76,17 @@ function cpm = loadRNAexpression(filename)
     hdr = fgetl(fh);
     hdr = regexp(hdr, '\t', 'split');
     hdr = cell2mat(cellfun(@(x) {sscanf(x,'T%ds_%d')'}, hdr(2:end))');
-    txt = textscan(fh, '%s %n %n %n %n %n %n %n %n %n %n %n %n', 'delimiter', '\t');
+    txt = textscan(fh, '%s %n %n %n %n %n %n %n %n %n  %n %n %n', 'delimiter', '\t');
     fclose(fh);
     cpm.name = txt{1};
     cpm.header = hdr;
     cpm.counts = [txt{2:end}];
+    [~,idxsort] = sortrows(cpm.header, [1,2]);
+    cpm.counts = cpm.counts(:,idxsort);
+    idxfilter = all(cpm.counts == 0, 2);
+    cpm.header = cpm.header(idxsort,:);
+    cpm.name(idxfilter) = [];
+    cpm.counts(idxfilter,:) = [];
     
 end
 

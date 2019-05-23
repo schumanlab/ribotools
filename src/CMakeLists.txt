@@ -1,4 +1,4 @@
-project(ribotools VERSION 1.0.0 LANGUAGES CXX)
+project(ribotools LANGUAGES CXX)
 set(SOURCE  ribotools.cpp
             version.cpp version.hpp
             bedrecord.cpp bedrecord.hpp
