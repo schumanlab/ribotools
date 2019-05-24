@@ -3,8 +3,9 @@
 #include <sstream>
 #include <unordered_map>
 
-#include <htslib/sam.h>
 #include <htslib/hts.h>
+#include <htslib/faidx.h>
+#include <htslib/tbx.h>
 #include <htslib/kstring.h>
 
 
@@ -23,69 +24,81 @@ int main(int argc, char *argv[])
 {
     auto fileCodonMap = std::string(argv[1]);
     auto fileBed = std::string(argv[2]);
-    auto fileBam = std::string(argv[3]);
-
+    auto fileFasta = std::string(argv[3]);
+    auto fileGbed = std::string(argv[4]);
+    
     // Load Codon Map
     std::unordered_map<std::string, AAIndex> codonMap;
     loadCodonMap(codonMap, fileCodonMap);
+
+    faidx_t *fai = fai_load(fileFasta.c_str());
+    if (!fai) {
+        std::cerr << "Error: failed to load fasta reference" << std::endl;
+        return -1;
+    }
+
+    htsFile *fhGbed = hts_open(fileGbed.c_str(), "r");
+    if (!fhGbed) {
+        std::cerr << "Error: failed to load Gbed file" << std::endl;
+        return -1;
+    }
+
+    tbx_t *fhGbedIdx = tbx_index_load(fileGbed.c_str());
+    if (!fhGbedIdx) {
+        std::cerr << "Error: failed to load Gbed index" << std::endl;
+        return -1;
+    }
+
+    hts_itr_t *iterGbed = nullptr;
 
     std::ifstream fh;
     std::string line;
     
     // constructor
-    samFile *fhBam = sam_open(fileBam.c_str(), "r");
-    bam_hdr_t *hdrBam = sam_hdr_read(fhBam);
-    hts_idx_t *idxBam = sam_index_load(fhBam, fileBam.c_str());
-    bam1_t *aln = bam_init1();
-    hts_itr_t *iter;
     fh.open(fileBed);
-
-    char *readSeq = (char*)malloc(sizeof(char) * 64);
-
 
     while (std::getline(fh, line)) {
         auto bed = BedRecord();
         std::istringstream isline(line);
         isline >> bed;
         bed.parseExons();
-
-        std::cout << bed.transcript() << std::endl;
-        int queryStart = static_cast<int>(bed.cdsStart);// + 60;
-        int queryEnd = static_cast<int>(bed.cdsEnd);// - 60;
+        char *rnaSeq = faidx_fetch_seq(fai, bed.name.c_str(), 0, bed.span, &bed.span);
         
-
-        int tid = bam_name2id(hdrBam, bed.transcript().c_str());
-        iter = sam_itr_queryi(idxBam, tid, queryStart, queryEnd);
+        
+        int queryStart = bed.cdsStart;// + 60;
+        int queryEnd = bed.cdsEnd;// - 60;
+        int queryTid = tbx_name2id(fhGbedIdx, bed.transcript().c_str());
+        kstring_t buffer;
+        iterGbed = tbx_itr_queryi(fhGbedIdx, queryTid, queryStart, queryEnd);
         int ret = 0;
-        while (sam_itr_next(fhBam, iter, aln) >= 0) {
+        while (tbx_itr_next(fhGbed, fhGbedIdx, iterGbed, &buffer) >= 0) {
             ret++;
-            int readStart = aln->core.pos + 15;
-            int readOffset = readStart - bed.cdsStart;
-            int readLength = bam_cigar2qlen(aln->core.n_cigar, bam_get_cigar(aln));
-            
-            for (int b = 0; b < aln->core.l_qseq; b++) {
-                readSeq[b] = seq_nt16_str[bam_seqi(bam_get_seq(aln), b)];
-            }
-            readSeq[aln->core.l_qseq] = '\0';
-
-            if (0 <= readStart) && (readStart <= )
-            std::cout << readStart << "\t" << readOffset << "\t" << readLength << "\t" << readSeq << std::endl;
-            
+            std::istringstream isbuffer(std::string(buffer.s));
+            std::string chrom;
+            int chromStart;
+            int chromEnd;
+            int chromDepth;
+            isbuffer >> chromStart;
+            isbuffer >> chromEnd;
+            isbuffer >> chromDepth;
+            std::cout << chrom << ":" << chromStart << "-" << chromEnd << "@" << chromDepth << std::endl;
         }
-        std::cout << ret << std::endl;
 
-
+        std::cout << bed.name << "\t" << ret << std::endl;
+        
+        if (rnaSeq)
+            free(rnaSeq);
     }
 
     // destructor
-    free(readSeq);
+    if (iterGbed != nullptr)
+        tbx_itr_destroy(iterGbed);
+    
     fh.close();
-    bam_destroy1(aln);
-    bam_hdr_destroy(hdrBam);
-    hts_itr_destroy(iter);
-    hts_idx_destroy(idxBam);
-    sam_close(fhBam);
-
+    fai_destroy(fai);
+    hts_close(fhGbed);
+    tbx_destroy(fhGbedIdx);
+    
     return 0;
 }
 

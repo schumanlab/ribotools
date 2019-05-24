@@ -35,10 +35,10 @@ void BedRecord::swap(BedRecord &other)
     std::swap(blockStarts, other.blockStarts);
 }
 
-void BedRecord::listToArray(std::vector<uint32_t> &array, const std::string &list)
+void BedRecord::listToArray(std::vector<int> &array, const std::string &list)
 {
     std::stringstream ss(list);
-    uint32_t value;
+    int value;
     while (ss >> value)
     {
         array.push_back(value);
@@ -76,10 +76,10 @@ std::istream& operator>> (std::istream& in, BedRecord &data)
 
 void BedRecord::parseExons()
 {
-    for (uint32_t k = 0; k < blocks; k++)
+    for (int k = 0; k < blocks; k++)
     {
-        uint32_t exonStart = chromStart + blockStarts[k];
-        uint32_t exonEnd = exonStart + blockSizes[k];
+        int exonStart = chromStart + blockStarts[k];
+        int exonEnd = exonStart + blockSizes[k];
 
         if ((exonStart <= thickStart) && (thickStart <= exonEnd))
         {
@@ -103,7 +103,7 @@ void BedRecord::parseExons()
 }
 
 
-bool BedRecord::overlap(const std::string &readChrom, uint32_t readStart, uint32_t readEnd)
+bool BedRecord::overlap(const std::string &readChrom, int readStart, int readEnd)
 {
     return (chrom.compare(readChrom) == 0) && (chromStart <= readEnd) && (readStart <= chromEnd);
 }
