@@ -64,30 +64,70 @@ int main(int argc, char *argv[])
         bed.parseExons();
         char *rnaSeq = faidx_fetch_seq(fai, bed.name.c_str(), 0, bed.span, &bed.span);
         
-        
-        int queryStart = bed.cdsStart;// + 60;
-        int queryEnd = bed.cdsEnd;// - 60;
+        int queryStart = bed.cdsStart + 60;
+        int queryEnd = bed.cdsEnd - 60;
+        int querySpan = queryEnd - queryStart;
+        double *rnaDepth = (double *)std::calloc(querySpan, sizeof(double));
         int queryTid = tbx_name2id(fhGbedIdx, bed.transcript().c_str());
         kstring_t buffer;
         iterGbed = tbx_itr_queryi(fhGbedIdx, queryTid, queryStart, queryEnd);
-        int ret = 0;
+        
+        double totalDepth = 0.0;
         while (tbx_itr_next(fhGbed, fhGbedIdx, iterGbed, &buffer) >= 0) {
-            ret++;
-            std::istringstream isbuffer(std::string(buffer.s));
+            
+            std::string gbedLine = std::string(buffer.s);
+            std::istringstream isbuffer(gbedLine);
             std::string chrom;
             int chromStart;
             int chromEnd;
-            int chromDepth;
+            double chromDepth;
+            isbuffer >> chrom;
             isbuffer >> chromStart;
             isbuffer >> chromEnd;
             isbuffer >> chromDepth;
-            std::cout << chrom << ":" << chromStart << "-" << chromEnd << "@" << chromDepth << std::endl;
+
+            for (int k = chromStart; k < chromEnd; k++) {
+                int index = k - queryStart;
+                if ((0 <= index) && (index < querySpan)) {
+                    rnaDepth[index] = chromDepth;
+                    totalDepth += chromDepth;
+                }
+            }
         }
 
-        std::cout << bed.name << "\t" << ret << std::endl;
+        double averageDepth = totalDepth / querySpan;
+        
+        for (int k = 0; k < querySpan; k+=3) {
+            double codonCoverage = rnaDepth[k] + rnaDepth[k+1] + rnaDepth[k+2];
+            codonCoverage = (codonCoverage - (static_cast<int>(codonCoverage) % 3)) / 3.0;
+            double codonDepth = codonCoverage / averageDepth;
+            char codonSeq[4];
+            memset(codonSeq, '\0', 4);
+            std::strncpy(codonSeq, &rnaSeq[queryStart + k], 3);
+            codonSeq[3] = '\0';
+            
+            if (codonSeq[0] == '\0')
+                continue;
+
+            if (codonSeq[1] == '\0')
+                continue;
+
+            if (codonSeq[2] == '\0')
+                continue;
+
+            if (std::strchr(codonSeq, 'N'))
+                continue;
+
+            if (codonDepth > 0)
+                std::cout << codonSeq << "\t" << codonDepth << std::endl;
+        }
+        
         
         if (rnaSeq)
             free(rnaSeq);
+        
+        if (rnaDepth)
+            free(rnaDepth);
     }
 
     // destructor

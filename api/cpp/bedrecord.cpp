@@ -100,6 +100,9 @@ void BedRecord::parseExons()
         cdsEnd = span - cdsEnd;
         std::swap(cdsStart, cdsEnd);
     }
+
+    // correct for unsymetric ORF
+    cdsEnd = cdsEnd - (cdsEnd % 3);
 }
 
 

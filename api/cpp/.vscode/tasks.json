@@ -25,6 +25,10 @@
                 "cwd": "${workspaceRoot}/build"
             },
             "command": "make",
+            "args": [
+                "-j",
+                "8"
+            ],
             "dependsOn": [
                 "cmake"
             ]
