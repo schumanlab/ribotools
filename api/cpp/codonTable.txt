@@ -40,7 +40,7 @@ CCT	P	Pro	Proline
 CAA	Q	Gln	Glutamine
 CAG	Q	Gln	Glutamine
 AGA	R	Arg	Arginine
-AGG	R	Arg	Arginine															
+AGG	R	Arg	Arginine
 CGA	R	Arg	Arginine
 CGC	R	Arg	Arginine
 CGG	R	Arg	Arginine

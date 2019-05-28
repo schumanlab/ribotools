@@ -118,7 +118,7 @@ int main(int argc, char *argv[])
             if (std::strchr(codonSeq, 'N'))
                 continue;
 
-            if (codonDepth > 0)
+            if ((codonDepth > 0) && (codonDepth <= 10))
                 std::cout << codonSeq << "\t" << codonDepth << std::endl;
         }
         
