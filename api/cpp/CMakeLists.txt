@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall")
+set (CMAKE_CXX_STANDARD 14)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++17 -W -Wall -pedantic")
@@ -9,7 +9,9 @@ endif()
 
 project(codonNFC)
 set(SOURCE codonNFC.cpp
-           bedrecord.cpp bedrecord.hpp)
+           bedrecord.cpp bedrecord.hpp
+           parserbam.cpp parserbam.hpp
+           parsercommands.cpp parsercommands.hpp)
 add_executable(${PROJECT_NAME} ${SOURCE})
 
 find_package(PkgConfig REQUIRED)
