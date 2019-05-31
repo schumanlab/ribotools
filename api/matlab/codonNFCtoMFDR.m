@@ -14,7 +14,7 @@ ref.name = txt{4};
 
 
 %% parse files
-pathToNFC = '/Users/tushevg/Desktop/codonNFC/';
+pathToNFC = '/Users/tushevg/Desktop/nfc/';
 fileList = dir([pathToNFC, filesep, '*.txt']);
 fileCount = length(fileList);
 f = 1;
@@ -56,7 +56,7 @@ for f = 1 : fileCount
     %}
 end
 
-fw = fopen('codonNFC_Report_28May2019.txt','w');
+fw = fopen('codonNFC_Report_Npl_Total_31May2019.txt','w');
 fprintf(fw,'#code\tletter\tabbreviation\tname\t');
 header = sprintf('%s\t',fileTagList{:});
 header(end) = [];

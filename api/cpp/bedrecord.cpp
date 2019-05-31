@@ -94,7 +94,7 @@ void BedRecord::parseExons()
         span += blockSizes[k];
     }
 
-    cdsSpan = cdsEnd - cdsStart;
+    // swap cdsStart and cdsEnd if negative strand
     if (strand == '-') {
         cdsStart = span - cdsStart;
         cdsEnd = span - cdsEnd;
@@ -102,7 +102,9 @@ void BedRecord::parseExons()
     }
 
     // correct for unsymetric ORF
-    cdsEnd = cdsEnd - (cdsEnd % 3);
+    cdsSpan = cdsEnd - cdsStart;
+    cdsSpan = cdsSpan - (cdsSpan % 3);
+    cdsEnd = cdsStart + cdsSpan;
 }
 
 

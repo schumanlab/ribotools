@@ -81,14 +81,17 @@ int main(int argc, const char *argv[])
         std::istringstream iss(bedLine);
         iss >> bed;
         bed.parseExons();
-        char *rnaSeq = faidx_fetch_seq(fhFai, bed.name.c_str(), 0, bed.span, &bed.span);
-
-        int queryStart = bed.cdsStart;
-        int queryEnd = bed.cdsEnd;
-        int querySpan = queryEnd - queryStart;
+        
         int queryTid = bam_name2id(hdrBam, bed.transcript().c_str());
-        std::cout << bed.transcript() << ":" << queryStart << "-" << queryEnd << std::endl;
+        int queryStart = bed.cdsStart + 60;
+        int queryEnd = bed.cdsEnd - 60;
+        int querySpan = (queryEnd - queryStart) / 3;
 
+        if (querySpan < 100)
+            continue;
+        
+        char *rnaSeq = faidx_fetch_seq(fhFai, bed.name.c_str(), 0, bed.span, &bed.span);
+        double *queryDepth = (double *)calloc(querySpan, sizeof(double));
         
         hts_itr_t *itrBam = bam_itr_queryi(fhBai, queryTid, queryStart, queryEnd);
         bam1_t *algBam = bam_init1();
@@ -97,8 +100,74 @@ int main(int argc, const char *argv[])
         while ((ret = sam_itr_next(fhBam, itrBam, algBam)) >= 0) {
             
             test++;
+            
+            int readStart = algBam->core.pos;
+            int readLength = bam_cigar2qlen(algBam->core.n_cigar, bam_get_cigar(algBam));
+
+            for (int k = 0; k < readLength; k += 3) {
+                int index = (readStart + k - queryStart);
+                index = index - (index % 3);
+                index = index / 3;
+                if ((0 <= index) && (index < querySpan))
+                            queryDepth[index]++;
+            }
+
+           // in case of deletions of reference skip
+            /*
+            int n_cigar = algBam->core.n_cigar;
+            const uint32_t *cigar = bam_get_cigar(algBam);
+            for (int k = 0; k < n_cigar; ++k) {
+                //int opType = bam_cigar_type(bam_cigar_op(cigar[k]));
+                int opType = bam_cigar_op(cigar[k]);
+                int opLength = bam_cigar_oplen(cigar[k]);
+
+                if (opType != BAM_CMATCH)
+                    std::cout << "OPTYPE " << opType << " OPLENGTH " << opLength << std::endl;
+                
+                if ((opType == BAM_CDEL) || (opType == BAM_CREF_SKIP)) {
+                    readStart += opLength;
+                }
+                else if (opType == BAM_CMATCH) {
+                    for(int j = 0; j < opLength; ++j) {
+                        readStart += j;
+                        int offset = readStart - queryStart;
+                        if ((0 <= offset) && (offset < querySpan))
+                            queryDepth[offset]++;
+                    }
+                }
+                
+            }
+            */
+
         }
-        std::cout << bed.name << "\t" << test << std::endl;
+        //std::cout << bed.name << "\t" << test << std::endl;
+        
+        // average depth
+        double averageDepth = 0.0;
+        for (int t = 0; t < querySpan; ++t) {
+            averageDepth += queryDepth[t];
+            //std::cout << t << "\t" << queryDepth[t] << std::endl;
+        }
+        averageDepth = averageDepth / querySpan;
+
+
+        // print codons
+        for (int t = 0; t < querySpan; t++) {
+            double currentDepth = queryDepth[t] / averageDepth;
+            if ((0.0 < currentDepth) && (currentDepth <= 10.0)) {
+                char codonSeq[4];
+                memset(codonSeq, '\0', 4);
+                std::strncpy(codonSeq, &rnaSeq[queryStart + t * 3], 3);
+                codonSeq[3] = '\0';
+
+                if (std::strchr(codonSeq, 'N'))
+                    continue;
+                std::cout << codonSeq << "\t" << currentDepth << "\n";
+            }
+        }
+
+        if (queryDepth)
+            free(queryDepth);
 
         if (algBam)
             bam_destroy1(algBam);
