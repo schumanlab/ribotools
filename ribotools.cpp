@@ -2,34 +2,53 @@
 
 #define VERSION 1.01
 
-void version();
-void usage();
+int version();
+int usage();
 int main_codonfc(int argc, const char *argv[]);
+int main_codonrate(int argc, const char *argv[]);
 
 
 int main(int argc, const char *argv[])
 {
-    if (argc < 2) {usage(); return 1;}
+    // make sure sub command is present
+    if (argc < 2)
+        return usage();
 
-    if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {usage(); return 1;}
+    // parse on subcommand
+    const std::string subcommand = std::string(argv[1]);
+
+    if (subcommand == "-h" || subcommand == "--help") return usage();
     
-    else if (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0) {version(); return 1;}
+    else if (subcommand == "-v" || subcommand == "--version") return version();
 
-    else if (strcmp(argv[1], "codonfc") == 0) {main_codonfc(argc++, argv++);}
+    else if (subcommand == "codonfc") return main_codonfc(argc - 1, argv + 1);
 
-    else {usage(); return 1;}
+    else if (subcommand == "codonrate") return main_codonrate(argc - 1, argv + 1);
+
+    else {
+        std::cerr << "Error, unknown subcommand " << subcommand << std::endl;
+        return usage();
+    }
     
     return 0;
 }
 
 
-void version()
+
+
+int version()
 {
     std::cout << "Ribotools " << VERSION << std::endl;
+    std::cout << "  Scientific Computing Facility" << std::endl;
+    std::cout << "  Max-Planck Institute For Brain Research" << std::endl;
+    std::cout << "  https://gitlab.mpcdf.mpg.de/mpibr/schu/ribotools" << std::endl;
+    std::cout << "  bug reports: sciclist@brain.mpg.de" << std::endl;
+    return 0;
 }
 
 
-void usage()
+int usage()
 {
     std::cout << "Ribotools help" << std::endl;
+    return 0;
 }

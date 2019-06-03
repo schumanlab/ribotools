@@ -9,7 +9,9 @@ endif()
 
 project(ribotools)
 set(SOURCE ribotools.cpp
-           main_codonfc.cpp)
+           main_codonfc.cpp
+           main_codonrate.cpp
+           parserargv.cpp parserargv.h)
 add_executable(${PROJECT_NAME} ${SOURCE})
 
 find_package(PkgConfig REQUIRED)
