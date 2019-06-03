@@ -1,11 +1,23 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.0)
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall")
+set (CMAKE_CXX_STANDARD 14)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++17 -W -Wall -pedantic")
+    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++14 -W -Wall -pedantic")
 endif()
 
-add_subdirectory(src)
-add_subdirectory(test)
+project(ribotools)
+set(SOURCE ribotools.cpp
+           main_codonfc.cpp)
+add_executable(${PROJECT_NAME} ${SOURCE})
+
+find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(ZLIB REQUIRED zlib)
+target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${ZLIB_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} ${ZLIB_LIBRARIES})
+
+pkg_check_modules(HTSLIB REQUIRED htslib)
+target_include_directories(${PROJECT_NAME} SYSTEM PUBLIC ${HTSLIB_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} ${HTSLIB_LIBRARIES})

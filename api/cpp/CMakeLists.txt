@@ -9,6 +9,7 @@ endif()
 
 project(codonNFC)
 set(SOURCE codonNFC.cpp
+           translationRate.cpp
            bedrecord.cpp bedrecord.hpp
            parserbam.cpp parserbam.hpp
            parsercommands.cpp parsercommands.hpp)
