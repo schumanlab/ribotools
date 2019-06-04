@@ -4,7 +4,7 @@ clear variables
 close all
 
 %% read reference codons
-fh = fopen('/Users/tushevg/Desktop/ribotools/api/cpp/codonTable.txt', 'r');
+fh = fopen('/Users/tushevg/Desktop/MTDRAlgorithm/codonTable.txt', 'r');
 txt = textscan(fh, '%s %s %s %s','delimiter','\t');
 fclose(fh);
 ref.code = txt{1};
