@@ -56,7 +56,7 @@ for f = 1 : fileCount
     %}
 end
 
-fw = fopen('codonNFC_Report_Npl_Total_31May2019.txt','w');
+fw = fopen('/Users/tushevg/Desktop/codonNFC_Report_NplSmt_04Jun2019.txt','w');
 fprintf(fw,'#code\tletter\tabbreviation\tname\t');
 header = sprintf('%s\t',fileTagList{:});
 header(end) = [];
