@@ -114,7 +114,7 @@ int main_codonrate(int argc, const char *argv[])
         // write results
         std::cout << bed.name << "\t" << querySpan;
         for (int j = 0; j < elementSize; ++j) {
-            std::cout << "\t" << resultSum[j]/resultCount[j];
+            std::cout << "\t" << exp(resultSum[j]/resultCount[j]);
         }
         std::cout << std::endl;
 
