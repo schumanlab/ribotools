@@ -4,7 +4,7 @@ clear variables
 close all
 
 %% read reference codons
-fh = fopen('/Users/tushevg/Desktop/MTDRAlgorithm/codonTable.txt', 'r');
+fh = fopen('/Users/tushevg/Desktop/MTDRAlgorithm/refs/codonTable.txt', 'r');
 txt = textscan(fh, '%s %s %s %s','delimiter','\t');
 fclose(fh);
 ref.code = txt{1};
@@ -14,7 +14,7 @@ ref.name = txt{4};
 
 
 %% parse files
-pathToNFC = '/Users/tushevg/Desktop/nfc/';
+pathToNFC = '/Users/tushevg/Desktop/MTDRAlgorithm/nfc/';
 fileList = dir([pathToNFC, filesep, '*.txt']);
 fileCount = length(fileList);
 f = 1;
@@ -56,7 +56,7 @@ for f = 1 : fileCount
     %}
 end
 
-fw = fopen('/Users/tushevg/Desktop/codonNFC_Report_NplSmt_04Jun2019.txt','w');
+fw = fopen('/Users/tushevg/Desktop/MTDRAlgorithm/tdt/codonTDT_Report_Summary_05Jun2019.txt','w');
 fprintf(fw,'#code\tletter\tabbreviation\tname\t');
 header = sprintf('%s\t',fileTagList{:});
 header(end) = [];

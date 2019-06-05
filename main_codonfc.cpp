@@ -74,6 +74,7 @@ int main_codonfc(int argc, const char *argv[])
         return 1;
     }
 
+
     // loop over BED records
     std::string line;
     while (std::getline(fhBed, line)) {
@@ -84,12 +85,13 @@ int main_codonfc(int argc, const char *argv[])
         bed.parseExons();
 
         // calculate footprint coverage
+        int offset = 20;
         std::vector<double> fc;
         calculateFootprintCoverage(fc, bed, hdrBam, fhBai, fhBam);
-        double fcAverage = std::accumulate(fc.begin(), fc.end(), 0.0) / fc.size();
+        double fcAverage = std::accumulate(fc.begin() + offset, fc.end() - offset, 0.0) / fc.size();
 
         // estimate NFC per codon
-        normalizedFootprintCoveragePerCodon(fc, fcAverage, 20, bed, fhFai);
+        normalizedFootprintCoveragePerCodon(fc, fcAverage, offset, bed, fhFai);
     }
 
 
@@ -142,6 +144,15 @@ void calculateFootprintCoverage(std::vector<double> &fc, BedRecord &bed, bam_hdr
         int readStart = algBam->core.pos;
         int readLength = bam_cigar2qlen(algBam->core.n_cigar, bam_get_cigar(algBam));
 
+        // calculate A-site coverage
+        int index = readStart + readLength/2 - queryStart;
+        index = index - (index % 3);
+        index = index / 3;
+        if ((0 <= index) && (index < querySpan))
+                fc[index] += 1.0;
+
+        // calculate full coverage
+        /*
         for (int k = 0; k < readLength; k += 3) {
             int index = (readStart + k - queryStart);
             index = index - (index % 3);
@@ -149,7 +160,7 @@ void calculateFootprintCoverage(std::vector<double> &fc, BedRecord &bed, bam_hdr
             if ((0 <= index) && (index < querySpan))
                 fc[index] += 1.0;
         }
-
+        */
     }
 
     if (algBam)
