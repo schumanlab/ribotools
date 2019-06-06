@@ -11,8 +11,10 @@ project(ribotools)
 set(SOURCE ribotools.cpp
            main_codonfc.cpp
            main_codonrate.cpp
-           parserargv.cpp parserargv.h
-           bedrecord.cpp bedrecord.h)
+           main_asite.cpp
+           main_uorfs.cpp
+           parserargv.cpp parserargv.hpp
+           bedrecord.cpp bedrecord.hpp)
 add_executable(${PROJECT_NAME} ${SOURCE})
 
 find_package(PkgConfig REQUIRED)

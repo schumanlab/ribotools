@@ -6,7 +6,8 @@ int version();
 int usage();
 int main_codonfc(int argc, const char *argv[]);
 int main_codonrate(int argc, const char *argv[]);
-
+int main_asite(int argc, const char *argv[]);
+int main_uorfs(int argc, const char *argv[]);
 
 int main(int argc, const char *argv[])
 {
@@ -24,6 +25,10 @@ int main(int argc, const char *argv[])
     else if (subcommand == "codonfc") return main_codonfc(argc - 1, argv + 1);
 
     else if (subcommand == "codonrate") return main_codonrate(argc - 1, argv + 1);
+
+    else if (subcommand == "asite") return main_asite(argc - 1, argv + 1);
+
+    else if (subcommand == "uorfs") return main_uorfs(argc - 1, argv + 1);
 
     else {
         std::cerr << "Error, unknown subcommand " << subcommand << std::endl;

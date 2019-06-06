@@ -5,8 +5,8 @@
 
 #include <htslib/faidx.h>
 
-#include "parserargv.h"
-#include "bedrecord.h"
+#include "parserargv.hpp"
+#include "bedrecord.hpp"
 
 int parseRates(int &elementSize, std::unordered_map<std::string, std::vector<double>> &rateTable, const std::string &fileName);
 
