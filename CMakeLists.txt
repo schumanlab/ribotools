@@ -8,13 +8,16 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
 endif()
 
 project(ribotools)
-set(SOURCE ribotools.cpp
-           main_codonfc.cpp
-           main_codonrate.cpp
-           main_asite.cpp
-           main_uorfs.cpp
-           parserargv.cpp parserargv.hpp
-           bedrecord.cpp bedrecord.hpp)
+set(SOURCE 
+    ribotools.cpp
+    parserargv.cpp parserargv.h
+    bedrecord.cpp bedrecord.h
+    bamhandle.cpp bamhandle.h
+    main_codonfc.cpp
+    main_codonrate.cpp
+    main_asite.cpp
+    main_uorfs.cpp
+    main_metagene.cpp)
 add_executable(${PROJECT_NAME} ${SOURCE})
 
 find_package(PkgConfig REQUIRED)
