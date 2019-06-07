@@ -13,6 +13,8 @@ public:
     explicit BamHandle(const std::string &fileName);
     ~BamHandle();
 
+    int orfDepth(std::vector<double> &cov, const std::string &chrom, int chromStart, int chromEnd, int orfStart);
+
 private:
     htsFile *bam;
     hts_idx_t *bai;
