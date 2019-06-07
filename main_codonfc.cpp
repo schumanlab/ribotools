@@ -6,8 +6,8 @@
 #include <htslib/sam.h>
 #include <htslib/hts.h>
 
-#include "parserargv.hpp"
-#include "bedrecord.hpp"
+#include "parserargv.h"
+#include "bedrecord.h"
 
 void calculateFootprintCoverage(std::vector<double> &fc, BedRecord &bed, bam_hdr_t *hdrBam, hts_idx_t *fhBai, htsFile *fhBam);
 void normalizedFootprintCoveragePerCodon(std::vector<double> &fc, double fcAverage, int offset, BedRecord &bed, faidx_t *fhFai);

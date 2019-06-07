@@ -1,3 +1,6 @@
+# vscode
+./vscode/ipch/
+
 # build
 build/
 *.mat
