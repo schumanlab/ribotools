@@ -13,7 +13,7 @@ public:
     explicit BamHandle(const std::string &fileName);
     ~BamHandle();
 
-    int orfDepth(std::vector<double> &cov, const std::string &chrom, int chromStart, int chromEnd, int orfStart);
+    void codonDepth(std::vector<double> &depth, const std::string &name, int geneSpan, int cdsStart, int offset);
 
 private:
     htsFile *bam;

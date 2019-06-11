@@ -44,29 +44,30 @@ BamHandle::~BamHandle()
 }
 
 
-int BamHandle::orfDepth(std::vector<double> &cov, const std::string &chrom, int chromStart, int chromEnd, int orfStart)
+void BamHandle::codonDepth(std::vector<double> &depth, const std::string &name, int geneSpan, int cdsStart, int offset)
 {
-    int count = 0;
-    int chromTid = bam_name2id(header, chrom.c_str());
-    int chromSpan = (chromEnd - chromStart) / 3;
-    hts_itr_t *iterator = bam_itr_queryi(bai, chromTid, chromStart, chromEnd);
+    int chromTid = bam_name2id(header, name.c_str());
+
+    hts_itr_t *iterator = bam_itr_queryi(bai, chromTid, 0, geneSpan);
     bam1_t *alignment = bam_init1();
-    cov.resize(chromSpan, 0.0);
     int ret = 0;
     while ((ret = sam_itr_next(bam, iterator, alignment)) >= 0) {
 
         int readStart = alignment->core.pos;
         int readLength = bam_cigar2qlen(alignment->core.n_cigar, bam_get_cigar(alignment));
 
-        // calculate A-site coverage
-        int index = readStart + readLength/2 - orfStart;
-        index = (index + 3) - (index % 3);
-        index = index / 3;
-        if ((0<= index) && (index < chromSpan)) {
-            cov[index] += 1.0;
-            count++;
-        }
+        // calculate A-site per read
+        int offset = readLength / 2;
+        offset = (offset + 3) - (offset % 3);
+        int index = readStart + offset - cdsStart;
+        index -= (abs(index) % 3) * ((0 < index) - (index < 0));
+        index /= 3;
+        index += offset;
 
+        if ((0<= index) && (index < depth.size())) {
+            depth[index] += 1.0;
+        }
+        
     }
 
     if (alignment)
@@ -75,5 +76,5 @@ int BamHandle::orfDepth(std::vector<double> &cov, const std::string &chrom, int 
     if (iterator)
         bam_itr_destroy(iterator);
 
-    return count;
+    //return count;
 }

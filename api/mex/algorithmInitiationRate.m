@@ -23,13 +23,13 @@ nGenes = length(data);
 counts = zeros(nGenes, 6);
 codons = zeros(nGenes, 6);
 avg = zeros(nGenes, 6);
-rnas = zeros(nGenes,6);
+rnas = ones(nGenes,6);
 L = zeros(nGenes, 1);
 for g = 1 : nGenes
     name = data(g).gene;
-    counts(g,:) = double([data(g).counts(4:6)',data(g).counts(10:12)']);
+    counts(g,:) = double([data(g).counts(4:6)',data(g).counts(22:24)']);
     tracks = double([data(g).tracks(4:6,:);
-                     data(g).tracks(10:12,:)]);
+                     data(g).tracks(22:24,:)]);
     
     for t = 1 : size(tracks,1)
         
@@ -37,30 +37,33 @@ for g = 1 : nGenes
         tmp = movmean(tmp, 5);
         codons(g,t) = sum(tmp(1:5));
         avg(g,t) = mean(tmp) + 1;
+        
     end
     
     L(g) = size(tracks, 2)/3;
-    %idxCpm = strcmp(name, rna.name);
-    %rnas(g,:) = [rna.counts(idxCpm,1:3),rna.counts(idxCpm,10:12)] + 1;
+    idxCpm = strcmp(name, rna.name);
+    if (sum(idxCpm) > 0)
+    rnas(g,:) = [rna.counts(idxCpm,1:3),rna.counts(idxCpm,4:6)] + 1;
+    end
 end
 
 [ncounts, factorDepth] = DESeqNormalization(counts);
 ncodons = bsxfun(@rdivide, codons, factorDepth);
-%factorRNA = bsxfun(@rdivide, mean(rnas, 2), rnas);
-%ncodons = ncodons .* factorRNA;
+factorRNA = bsxfun(@rdivide, mean(rnas, 2), rnas);
+ncodons = ncodons .* factorRNA;
 
 nrate = codons;
 
 %ncodons = codons ./ avg;
-initRate = (ncodons(:,4:6) - ncodons(:,1:3))./150;
-initRateTest = (nrate(:,4:6) - nrate(:,1:3))./150;
+initRate = (ncodons(:,4:6) - ncodons(:,1:3))./90;
+%initRateTest = (nrate(:,4:6) - nrate(:,1:3))./120;
 %initRate = max(initRate,[],2);
 
 names = {data.gene}';
 idx = strcmp('Camk2a', names);
 %}
 %
-fw = fopen('initiationTest_DepthNorm_06May2019.txt','w');
+fw = fopen('/Users/tushevg/Desktop/initiationTest_RNANorm90_06May2019.txt','w');
 tmp = [{data.gene}',num2cell(initRate)]';
 fprintf(fw,'%s\t%.4f\t%.4f\t%.4f\n',tmp{:});
 fclose(fw);

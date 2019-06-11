@@ -13,7 +13,9 @@ BedRecord::BedRecord() :
     span(0),
     chrom(""),
     name(""),
-    itemRgb("")
+    itemRgb(""),
+    transcript(""),
+    gene("")
 {
     
 }
@@ -33,6 +35,8 @@ void BedRecord::swap(BedRecord &other)
     std::swap(blocks, other.blocks);
     std::swap(blockSizes, other.blockSizes);
     std::swap(blockStarts, other.blockStarts);
+    std::swap(transcript, other.transcript);
+    std::swap(gene, other.gene);
 }
 
 void BedRecord::listToArray(std::vector<int> &array, const std::string &list)
@@ -68,6 +72,9 @@ std::istream& operator>> (std::istream& in, BedRecord &data)
     {
         BedRecord::listToArray(temp.blockSizes, tempBlockSizes);
         BedRecord::listToArray(temp.blockStarts, tempBlockStarts);
+        std::string::size_type positionDelimiter = temp.name.find(";");
+        temp.transcript = temp.name.substr(0, positionDelimiter);
+        temp.gene = temp.name.substr(positionDelimiter + 1, temp.name.size() - positionDelimiter);
         data.swap(temp);
     }
     return in;
@@ -114,7 +121,14 @@ bool BedRecord::overlap(const std::string &readChrom, int readStart, int readEnd
 }
 
 
-std::string BedRecord::transcript()
+int BedRecord::nextCodon(int position)
 {
-    return name.substr(0, name.find(';'));
+    return prevCodon(position) + 1;
+}
+
+
+int BedRecord::prevCodon(int position)
+{
+    position -= cdsStart;
+    return (position - (abs(position) % 3) * ((0 < position) - (position < 0))) / 3;
 }

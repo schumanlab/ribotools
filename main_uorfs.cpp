@@ -86,7 +86,7 @@ int main_uorfs(int argc, const char *argv[])
         std::istringstream iss(line);
         iss >> bed;
         bed.parseExons();
-        int countORF = countReadsOverRegion(bed.transcript(), bed.cdsStart, bed.cdsEnd, hdrBam, fhBai, fhBam);
+        int countORF = countReadsOverRegion(bed.transcript, bed.cdsStart, bed.cdsEnd, hdrBam, fhBai, fhBam);
         if (countORF == 0)
             continue;
 
@@ -113,7 +113,7 @@ int main_uorfs(int argc, const char *argv[])
                     std::strncpy(uorfSeq, &rnaSeq[uorfStart], uorfSpan);
                     uorfSeq[uorfSpan] = '\0';
 
-                    int countUORF = countReadsOverRegion(bed.transcript(), uorfStart, uorfEnd - 3, hdrBam, fhBai, fhBam);
+                    int countUORF = countReadsOverRegion(bed.transcript, uorfStart, uorfEnd - 3, hdrBam, fhBai, fhBam);
 
                     if ((uorfSpan > 6) && (countUORF > 0))
                         std::cout << bed.name << "\t" << uorfStart << "\t" << uorfEnd << "\t" << uorfSpan / 3 << "\t" << frame << "\t" << countUORF << "\t" << bed.cdsStart << "\t" << countORF << "\t" << uorfSeq << std::endl;

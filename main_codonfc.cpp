@@ -132,7 +132,7 @@ void normalizedFootprintCoveragePerCodon(std::vector<double> &fc, double fcAvera
 
 void calculateFootprintCoverage(std::vector<double> &fc, BedRecord &bed, bam_hdr_t *hdrBam, hts_idx_t *fhBai, htsFile *fhBam)
 {
-    int queryTid = bam_name2id(hdrBam, bed.transcript().c_str());
+    int queryTid = bam_name2id(hdrBam, bed.transcript.c_str());
     int queryStart = bed.cdsStart;
     int queryEnd = bed.cdsEnd;
     int querySpan = (queryEnd - queryStart) / 3;

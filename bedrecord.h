@@ -24,6 +24,8 @@ public:
     std::string chrom;
     std::string name;
     std::string itemRgb;
+    std::string transcript;
+    std::string gene;
     std::vector<int> blockSizes;
     std::vector<int> blockStarts;
 
@@ -31,8 +33,9 @@ public:
     friend std::istream& operator>> (std::istream& in, BedRecord &data);
     void parseExons();
     bool overlap(const std::string &readChrom, int readStart, int readEnd);
-    std::string transcript();
 
+    int nextCodon(int position);
+    int prevCodon(int position);
 
 private:
     void swap(BedRecord &other);
