@@ -120,15 +120,31 @@ bool BedRecord::overlap(const std::string &readChrom, int readStart, int readEnd
     return (chrom.compare(readChrom) == 0) && (chromStart <= readEnd) && (readStart <= chromEnd);
 }
 
+int BedRecord::prevCodon(int position)
+{
+    position -= cdsStart;
+    return closestNumber(position, 3) / 3;
+}
 
 int BedRecord::nextCodon(int position)
 {
     return prevCodon(position) + 1;
 }
 
-
-int BedRecord::prevCodon(int position)
+int BedRecord::closestNumber(int n, int m)
 {
-    position -= cdsStart;
-    return (position - (abs(position) % 3) * ((0 < position) - (position < 0))) / 3;
+    // find the quotient
+    int q = n / m;
+
+    // left possible closest number
+    int n1 = m * q;
+
+    // right possible closest number
+    int n2 = (n * m) > 0 ? (m * (q + 1)) : (m * (q - 1));
+
+    // check if positive
+    if (abs(n - n1) < abs(n - n2))
+        return n1;
+    
+    return n2;
 }

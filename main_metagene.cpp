@@ -57,7 +57,12 @@ int main_metagene(int argc, const char *argv[])
         //int codonsGene = bed.
         //int codons5pUTR = BedRecord::nextCodon(bed.cdsStart);
 
-        std::cout << bed.gene << "\t" << bed.prevCodon(38) << "\t" << bed.nextCodon(42) << "\n";
+        std::cout << bed.gene << std::endl;
+        
+        for (int i = 38; i < 47; ++i) {
+            std::cout << i << "\t" << bed.prevCodon(i) << "\t" << bed.nextCodon(i) << std::endl;
+        }
+         
 
         /*
 

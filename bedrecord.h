@@ -39,6 +39,7 @@ public:
 
 private:
     void swap(BedRecord &other);
+    static int closestNumber(int n, int m);
 };
 
 #endif /* BEDLINE_H */
