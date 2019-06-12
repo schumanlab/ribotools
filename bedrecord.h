@@ -34,12 +34,13 @@ public:
     void parseExons();
     bool overlap(const std::string &readChrom, int readStart, int readEnd);
 
-    int nextCodon(int position);
-    int prevCodon(int position);
+    int psite(int position);
+    int asite(int position);
+    static int codon(int position);
 
 private:
     void swap(BedRecord &other);
-    static int closestNumber(int n, int m);
+    
 };
 
 #endif /* BEDLINE_H */

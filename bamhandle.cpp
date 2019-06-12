@@ -44,7 +44,7 @@ BamHandle::~BamHandle()
 }
 
 
-void BamHandle::codonDepth(std::vector<double> &depth, const std::string &name, int geneSpan, int cdsStart, int offset)
+void BamHandle::codonDepth(std::map<int, int> &depth, const std::string &name, int geneSpan, int cdsStart)
 {
     int chromTid = bam_name2id(header, name.c_str());
 
@@ -56,17 +56,16 @@ void BamHandle::codonDepth(std::vector<double> &depth, const std::string &name, 
         int readStart = alignment->core.pos;
         int readLength = bam_cigar2qlen(alignment->core.n_cigar, bam_get_cigar(alignment));
 
-        // calculate A-site per read
-        int offset = readLength / 2;
-        offset = (offset + 3) - (offset % 3);
-        int index = readStart + offset - cdsStart;
-        index -= (abs(index) % 3) * ((0 < index) - (index < 0));
-        index /= 3;
-        index += offset;
-
-        if ((0<= index) && (index < depth.size())) {
-            depth[index] += 1.0;
-        }
+        // calculate P-site per read
+        int readPsite = readStart + readLength - 17 - cdsStart;
+        
+        //std::cout << readStart << "\t" << readEnd << "\t" << readLength << "\t" << readStart - cdsStart << "\t" << readEnd - cdsStart << std::endl;
+        if (readPsite < 0)
+            readPsite -= 2;
+        
+        readPsite = (readPsite - (readPsite % 3)) / 3;
+        depth[readPsite]++;
+         
         
     }
 

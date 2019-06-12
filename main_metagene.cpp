@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <numeric>
+#include <map>
 
 #include <htslib/sam.h>
 #include <htslib/hts.h>
@@ -43,8 +44,13 @@ int main_metagene(int argc, const char *argv[])
     }
 
     // prepare metagene
-    int bufferSize = 100 * handlesBam.size();
-    std::vector<double> metagene(bufferSize, 0.0);
+    double edge_min = -0.1;
+    double edge_max = 1.1;
+    int bin_counts = 100;
+    double bin_width = (edge_max - edge_min) / (bin_counts - 1);
+    int buffer_size = bin_counts * handlesBam.size();
+    std::vector<double> metageneSum(buffer_size, 0.0);
+    std::vector<int> metageneNorm(buffer_size, 0);
 
     // loop over BED records
     std::string line;
@@ -54,34 +60,70 @@ int main_metagene(int argc, const char *argv[])
         iss >> bed;
         bed.parseExons();
 
-        //int codonsGene = bed.
-        //int codons5pUTR = BedRecord::nextCodon(bed.cdsStart);
-
-        std::cout << bed.gene << std::endl;
-        
-        for (int i = 38; i < 47; ++i) {
-            std::cout << i << "\t" << bed.prevCodon(i) << "\t" << bed.nextCodon(i) << std::endl;
-        }
-         
-
-        /*
+        int codonsCDS = bed.span / 3;
 
         // calculate coverage per file
+        int f = 0;
         for (auto handle : handlesBam) {
             
-            std::vector<double> depth(codonsGene, 0.0);
-            handle->codonDepth(depth, bed.transcript, bed.span, bed.cdsStart, codons5pUTR);
-            //double orfAverage = std::accumulate(depth.begin() + 14, depth.end() - 10, 0.0);
-
-            int c = 0;
+            std::map<int, int> depth;
+            std::vector<double> histSum(bin_counts, 0.0);
+            std::vector<int> histNorm(bin_counts, 0);
+            
+            // retrieve codon depth
+            handle->codonDepth(depth, bed.transcript, bed.span, bed.cdsStart);
+            
+            // calculate average coverage in ORF
+            double averageDepth = 0.0;
+            int averageNorm = 0;
             for (auto value : depth) {
-                std::cout << c++ << "\t" << value << std::endl;
+                if ((0 <= value.first) && (value.first <= codonsCDS)) {
+                    averageDepth += static_cast<double>(value.second);
+                    averageNorm++;
+                }
+            }
+            averageDepth /= averageNorm;
+            
+            if (averageDepth > 1.0) {
+
+                for (auto value : depth) {
+                    double x = static_cast<double>(value.first) / (bed.cdsSpan/3);
+                    int xbin = static_cast<int>((x - edge_min) / bin_width);
+                    if ((0 <= xbin) && (xbin < bin_counts)) {
+                        histSum[xbin] += value.second / averageDepth;
+                        histNorm[xbin]++;
+                    }
+                    //std::cout << xbin << "\t" << x << "\t" << value.first << "\t" << value.second << "\t" << value.second / averageDepth << std::endl;
+                }
+                
+                for (int k = 0; k < bin_counts; ++k) {
+
+                    double histAverage = 0.0;
+                    int idx = f + k;
+                    if (histNorm[k] != 0) {
+                        histAverage = histSum[k] / histNorm[k];
+                        metageneNorm[idx]++;
+                    }
+
+                    metageneSum[idx] += histAverage;
+                }
+
             }
 
+            f += bin_counts;
         }
-         */
         
     }
+
+    int k = 0;
+    for (int f = 0; f < metageneSum.size(); ++f) {
+        
+        std::cout << k << "\t" << metageneSum[f] << "\t" << metageneNorm[f] << std::endl;
+        k++;
+        if (k >= bin_counts)
+            k = 0;
+    }
+
 
 
 

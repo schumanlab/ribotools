@@ -2,8 +2,8 @@
 #define BAMHANDLE_H
 
 #include <iostream>
-#include <vector>
-#include <string>
+#include <map>
+
 #include <htslib/hts.h>
 #include <htslib/sam.h>
 
@@ -13,7 +13,7 @@ public:
     explicit BamHandle(const std::string &fileName);
     ~BamHandle();
 
-    void codonDepth(std::vector<double> &depth, const std::string &name, int geneSpan, int cdsStart, int offset);
+    void codonDepth(std::map<int, int> &depth, const std::string &name, int geneSpan, int cdsStart);
 
 private:
     htsFile *bam;
