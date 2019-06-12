@@ -60,7 +60,7 @@ int main_metagene(int argc, const char *argv[])
         iss >> bed;
         bed.parseExons();
 
-        int codonsCDS = bed.span / 3;
+        int codonsCDS = bed.cdsSpan / 3;
 
         // calculate coverage per file
         int f = 0;

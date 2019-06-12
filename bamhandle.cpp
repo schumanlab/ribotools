@@ -1,6 +1,7 @@
 #include "bamhandle.h"
 
 BamHandle::BamHandle(const std::string &fileName) :
+    name(fileName),
     bam(nullptr),
     bai(nullptr),
     header(nullptr)

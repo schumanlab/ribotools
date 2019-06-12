@@ -15,6 +15,8 @@ public:
 
     void codonDepth(std::map<int, int> &depth, const std::string &name, int geneSpan, int cdsStart);
 
+    std::string name;
+
 private:
     htsFile *bam;
     hts_idx_t *bai;
