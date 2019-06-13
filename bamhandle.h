@@ -10,17 +10,21 @@
 class BamHandle
 {
 public:
-    explicit BamHandle(const std::string &fileName);
+    explicit BamHandle(const std::string &fileName, int mapq, int length);
     ~BamHandle();
 
-    void codonDepth(std::map<int, int> &depth, const std::string &name, int geneSpan, int cdsStart);
-
-    std::string name;
-
+    std::string name();
+    void query(const std::string &queryChrom, int queryStart, int queryEnd);
+    int readBam(bam1_t *b);
+    
 private:
-    htsFile *bam;
-    hts_idx_t *bai;
-    bam_hdr_t *header;
+    int m_mapq;
+    int m_length;
+    std::string m_file;
+    htsFile *m_bam;
+    hts_idx_t *m_bai;
+    bam_hdr_t *m_header;
+    hts_itr_t *m_iterator;
 };
 
 #endif
