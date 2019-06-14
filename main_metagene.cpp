@@ -26,7 +26,7 @@ int main_metagene(int argc, const char *argv[])
     if (parser.find("--bam")) {
         std::string fileNameNext;
         while (parser.next(fileNameNext)) {
-            BamHandle *handle = new BamHandle(fileNameNext);
+            BamHandle *handle = new BamHandle(fileNameNext, 255, 0);
             handlesBam.push_back(handle);
         }
     }
@@ -69,9 +69,11 @@ int main_metagene(int argc, const char *argv[])
             std::map<int, int> depth;
             std::vector<double> histSum(bin_counts, 0.0);
             std::vector<int> histNorm(bin_counts, 0);
+
+            handle->query(bed.transcript, 0, bed.span);
             
             // retrieve codon depth
-            handle->codonDepth(depth, bed.transcript, bed.span, bed.cdsStart);
+            //handle->codonDepth(depth, bed.transcript, bed.span, bed.cdsStart);
             
             // calculate average coverage in ORF
             double averageDepth = 0.0;

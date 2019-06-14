@@ -10,14 +10,16 @@ endif()
 project(ribotools)
 set(SOURCE 
     ribotools.cpp
-    parserargv.cpp parserargv.h
-    bedrecord.cpp bedrecord.h
     bamhandle.cpp bamhandle.h
+    bedrecord.cpp bedrecord.h
+    parserargv.cpp parserargv.h
+    main_asite.cpp
     main_codonfc.cpp
     main_codonrate.cpp
-    main_asite.cpp
+    main_features.cpp
+    main_metagene.cpp
     main_uorfs.cpp
-    main_metagene.cpp)
+    )
 add_executable(${PROJECT_NAME} ${SOURCE})
 
 find_package(PkgConfig REQUIRED)

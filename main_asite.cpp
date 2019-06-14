@@ -23,7 +23,7 @@ int main_asite(int argc, const char *argv[])
     if (parser.find("--bam")) {
         std::string fileNameNext;
         while (parser.next(fileNameNext)) {
-            BamHandle *handle = new BamHandle(fileNameNext);
+            BamHandle *handle = new BamHandle(fileNameNext, 255, 0);
             handlesBam.push_back(handle);
         }
     }
