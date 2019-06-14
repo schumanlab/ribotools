@@ -11,6 +11,7 @@ int main_codonrate(int argc, const char *argv[]);
 int main_features(int argc, const char *argv[]);
 int main_metagene(int argc, const char *argv[]);
 int main_uorfs(int argc, const char *argv[]);
+int main_utrseq(int argc, const char *argv[]);
 
 int main(int argc, const char *argv[])
 {
@@ -36,6 +37,8 @@ int main(int argc, const char *argv[])
     else if (subcommand == "metagene") return main_metagene(argc - 1, argv + 1);
 
     else if (subcommand == "uorfs") return main_uorfs(argc - 1, argv + 1);
+
+    else if (subcommand == "utrseq") return main_utrseq(argc - 1, argv + 1);
 
     else {
         std::cerr << "Error, unknown subcommand " << subcommand << std::endl;

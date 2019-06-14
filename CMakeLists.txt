@@ -19,6 +19,7 @@ set(SOURCE
     main_features.cpp
     main_metagene.cpp
     main_uorfs.cpp
+    main_utrseq.cpp
     )
 add_executable(${PROJECT_NAME} ${SOURCE})
 
