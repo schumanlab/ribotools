@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <numeric>
 
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
@@ -8,15 +7,17 @@
 
 #include "parserargv.h"
 #include "bedrecord.h"
+#include "bamhandle.h"
 
-void calculateFootprintCoverage(std::vector<double> &fc, BedRecord &bed, bam_hdr_t *hdrBam, hts_idx_t *fhBai, htsFile *fhBam);
-void normalizedFootprintCoveragePerCodon(std::vector<double> &fc, double fcAverage, int offset, BedRecord &bed, faidx_t *fhFai);
+void calculateFootprintCoverage(std::vector<int> &fc, BamHandle *handle, const std::string &qName, int qStart, int qEnd);
+double calculateAverageFootprintCoverage(const std::vector<int> &fc, int qStart, int qEnd);
+void normalizedFootprintCoveragePerCodon(const std::vector<int> &fc, double fcAverage, char *sequence, int qStart, int qEnd);
 
 int main_codonfc(int argc, const char *argv[])
 {
     std::string fileBed;
     std::string fileFasta;
-    std::string fileBam;
+    std::vector<BamHandle*> handlesBam;
     
     // parse command line parameters
     ParserArgv parser(argc, argv);
@@ -30,8 +31,15 @@ int main_codonfc(int argc, const char *argv[])
         return 1;
     }
     
-    if (!(parser.find("--bam") && parser.next(fileBam))) {
-        std::cerr << "ribotools::codonfc::error, provide BAM file." << std::endl;
+    if (parser.find("--bam")) {
+        std::string fileNameNext;
+        while (parser.next(fileNameNext)) {
+            auto handle = new BamHandle(fileNameNext, 255, 0);
+            handlesBam.push_back(handle);
+        }
+    }
+    else {
+        std::cerr << "ribotools::metagene::error, provide BAM file." << std::endl;
         return 1;
     }
 
@@ -52,30 +60,6 @@ int main_codonfc(int argc, const char *argv[])
     }
 
 
-    // open BAM file
-    htsFile *fhBam = hts_open(fileBam.c_str(), "r");
-    if (!fhBam) {
-        std::cerr << "codonNFC::Error, failed to open BAM file " << fileBam << std::endl;
-        return 1;
-    }
-
-
-    // load BAI file
-    hts_idx_t *fhBai = hts_idx_load(fileBam.c_str(), HTS_FMT_BAI);
-    if (!fhBai) {
-        std::cerr << "codonNFC::Error, failed to load BAM index " << fileBam << ".bai" << std::endl;
-        return 1;
-    }
-
-
-    // read BAM header
-    bam_hdr_t *hdrBam = sam_hdr_read(fhBam);
-    if (!hdrBam) {
-        std::cerr << "codonNFC::Error, failed to load BAM header " << std::endl;
-        return 1;
-    }
-
-
     // loop over BED records
     std::string line;
     while (std::getline(fhBed, line)) {
@@ -86,96 +70,82 @@ int main_codonfc(int argc, const char *argv[])
         bed.parseExons();
 
         // calculate footprint coverage
-        int offset = 0;
-        std::vector<double> fc;
-        calculateFootprintCoverage(fc, bed, hdrBam, fhBai, fhBam);
+        std::vector<int> fc(bed.span, 0);
+        for (auto handle : handlesBam)
+            calculateFootprintCoverage(fc, handle, bed.transcript, 0, bed.span);
 
-        if (fc.size() - 2*offset < 10) continue;
-
-        double fcAverage = std::accumulate(fc.begin() + offset, fc.end() - offset, 0.0);
+        // calculate average in CDS
+        double fcAverage = calculateAverageFootprintCoverage(fc, bed.cdsStart, bed.cdsEnd);
         if (fcAverage < 1.0) continue;
-        fcAverage /= fc.size();
-
-        
 
         // estimate NFC per codon
-        normalizedFootprintCoveragePerCodon(fc, fcAverage, offset, bed, fhFai);
+        char *sequence = faidx_fetch_seq(fhFai, bed.name.c_str(), 0, bed.span, &bed.span);
+        
+        normalizedFootprintCoveragePerCodon(fc, fcAverage, sequence, bed.cdsStart, bed.cdsEnd);
+
+        if (sequence)
+            free(sequence);
     }
 
 
     // destructors
-    bam_hdr_destroy(hdrBam);
-    hts_idx_destroy(fhBai);
-    hts_close(fhBam);
     fai_destroy(fhFai);
     fhBed.close();
+    for (auto handle : handlesBam)
+        delete handle;
 
     return 0;
 }
 
-void normalizedFootprintCoveragePerCodon(std::vector<double> &fc, double fcAverage, int offset, BedRecord &bed, faidx_t *fhFai)
+void normalizedFootprintCoveragePerCodon(const std::vector<int> &fc, double fcAverage, char *sequence, int qStart, int qEnd)
 {
-    int codonSpan = fc.size() - offset;
-    char *rnaSeq = faidx_fetch_seq(fhFai, bed.name.c_str(), 0, bed.span, &bed.span);
-
+    
     // print codons
-    for (int c = offset; c < codonSpan; ++c) {
-        double nfc = fc[c] / fcAverage;
+    for (int c = qStart; c < qEnd; c += 3) {
+        double nfc = (fc[c] + fc[c + 1] + fc[c + 2]) / (3 * fcAverage);
         char codonSeq[4];
-        std::strncpy(codonSeq, &rnaSeq[bed.cdsStart + c * 3], 3);
+        std::strncpy(codonSeq, &sequence[c], 3);
         codonSeq[3] = '\0';
-        if (std::strchr(codonSeq, 'N'))
-            continue;
+        if (std::strchr(codonSeq, 'N')) continue;
         
-        if ((0.0 < nfc) && (nfc <= 10.0))
+        //if ((0.0 < nfc) && (nfc <= 10.0))
             std::cout << codonSeq << "\t" << nfc << std::endl;
     }
 
-    if (rnaSeq)
-        free(rnaSeq);
 }
 
 
-
-void calculateFootprintCoverage(std::vector<double> &fc, BedRecord &bed, bam_hdr_t *hdrBam, hts_idx_t *fhBai, htsFile *fhBam)
+double calculateAverageFootprintCoverage(const std::vector<int> &fc, int qStart, int qEnd)
 {
-    int queryTid = bam_name2id(hdrBam, bed.transcript.c_str());
-    int queryStart = bed.cdsStart;
-    int queryEnd = bed.cdsEnd;
-    int querySpan = (queryEnd - queryStart) / 3;
+    qStart = std::max(0, qStart);
+    qEnd = std::min(static_cast<int>(fc.size()), qEnd);
+    if (qEnd - qStart < 1) return 0.0;
+
+    int sum = 0;
+    for (int k = qStart; k < qEnd; k++)
+        sum += fc[k];
     
-    hts_itr_t *itrBam = bam_itr_queryi(fhBai, queryTid, queryStart, queryEnd);
-    bam1_t *algBam = bam_init1();
-    int ret = 0;
-    fc.resize(querySpan, 0.0);
-    while ((ret = sam_itr_next(fhBam, itrBam, algBam)) >= 0) {
-        int readStart = algBam->core.pos;
-        int readLength = bam_cigar2qlen(algBam->core.n_cigar, bam_get_cigar(algBam));
+    return static_cast<double>(sum) / (qEnd - qStart);
+}
 
-        // calculate A-site coverage
-        int index = readStart + readLength - 17 - queryStart;
-        if (index < 0)
-            index -= 2;
-        index = index - (index % 3);
-        index = index / 3;
-        if ((0 <= index) && (index < querySpan))
-                fc[index] += 1.0;
 
-        // calculate full coverage
-        /*
-        for (int k = 0; k < readLength; k += 3) {
-            int index = (readStart + k - queryStart);
-            index = index - (index % 3);
-            index = index / 3;
-            if ((0 <= index) && (index < querySpan))
-                fc[index] += 1.0;
-        }
-        */
+void calculateFootprintCoverage(std::vector<int> &fc, BamHandle *handle, const std::string &qName, int qStart, int qEnd)
+{
+    bam1_t *alignment = bam_init1();
+    handle->query(qName, qStart, qEnd);
+
+    while (handle->readBam(alignment) > 0) {
+
+        int readStart = alignment->core.pos;
+        int readLength = bam_cigar2qlen(alignment->core.n_cigar, bam_get_cigar(alignment));
+
+        // accumulate P-site per read
+        int readPsite = readStart + readLength - 17 - qStart;
+        if ((0<= readPsite) && (readPsite < fc.size()))
+            fc[readPsite]++;
     }
+    
+    if (alignment)
+        bam_destroy1(alignment);
 
-    if (algBam)
-        bam_destroy1(algBam);
-
-    if (itrBam)
-        bam_itr_destroy(itrBam);
 }
