@@ -8,7 +8,15 @@
 #include "parserargv.h"
 #include "bedrecord.h"
 
-int parseRates(int &elementSize, std::unordered_map<std::string, std::vector<double>> &rateTable, const std::string &fileName);
+struct AminoAcid {
+    char letter;
+    double weight;
+    std::string codon;
+    std::string code;
+    std::string name;
+};
+
+void readCodonWeights(std::unordered_map<std::string, double> &codonWeights, const std::string &fileName);
 
 int main_codonrate(int argc, const char *argv[])
 {
@@ -34,25 +42,8 @@ int main_codonrate(int argc, const char *argv[])
     }
 
 
-    std::unordered_map<std::string, std::vector<double>> rateTable;
-    int elementSize = 0;
-    if (parseRates(elementSize, rateTable, fileRates) > 0) {
-        std::cerr << "ribotools::codonrate::error, failed to parse rates." << std::endl;
-        return 1;
-    }
-
-    /*
-    std::string testKey = "AAA";
-    std::unordered_map<std::string, std::vector<double>>::const_iterator iot = rateTable.find(testKey);
-    if (iot != rateTable.end()) {
-        std::cout << iot->first;
-        
-        for (std::vector<double>::const_iterator it = iot->second.begin(); it != iot->second.end(); ++it) {
-            std::cout << "\t" << *it;
-        }
-        std::cout << std::endl;
-    }
-    */
+    std::unordered_map<std::string, double> codonWeights;
+    readCodonWeights(codonWeights, fileRates);
 
     // open FASTA file
     faidx_t *fhFai = fai_load(fileFasta.c_str());
@@ -77,49 +68,33 @@ int main_codonrate(int argc, const char *argv[])
         iss >> bed;
         bed.parseExons();
 
-        int queryStart = bed.cdsStart;
-        int queryEnd = bed.cdsEnd;
-        int querySpan = queryEnd - queryStart;
+        char *sequence = faidx_fetch_seq(fhFai, bed.name.c_str(), 0, bed.span, &bed.span);
 
-        std::vector<double> resultSum(elementSize);
-        std::vector<int> resultCount(elementSize);
-        int i = 0;
-        char *rnaSeq = faidx_fetch_seq(fhFai, bed.name.c_str(), 0, bed.span, &bed.span);
+        double value = 0.0;
+        int norm = 0;
 
-        for (int n = 0; n < querySpan; n += 3) {
-            char codonSeq[4];
-            memset(codonSeq, '\0', 4);
-            std::strncpy(codonSeq, &rnaSeq[queryStart + n], 3);
-            codonSeq[3] = '\0';
+        for (int c = bed.cdsStart; c < bed.cdsEnd; c += 3) {
+            char codon[4];
+            std::strncpy(codon, &sequence[c], 3);
+            codon[3] = '\0';
 
-            if (std::strchr(codonSeq, 'N'))
-                continue;
+            if (std::strchr(codon, 'N')) continue;
             
-            std::unordered_map<std::string, std::vector<double>>::const_iterator iot = rateTable.find(std::string(codonSeq));
-            if (iot != rateTable.end()) {
-                i = 0;
-                for (std::vector<double>::const_iterator it = iot->second.begin(); it != iot->second.end(); ++it) {
-                    double value = *it;
-                    
-                    if (value > 0) {
-                        resultSum[i] += log(1/value);
-                        resultCount[i]++;
-                    }
-            
-                    i++;        
-                }
-            }
+            auto next = codonWeights.find(std::string(codon));
+            if (next != codonWeights.end()) {
+                value += log(next->second);
+                norm++;
+            }            
         }
+
+
 
         // write results
-        std::cout << bed.name << "\t" << querySpan;
-        for (int j = 0; j < elementSize; ++j) {
-            std::cout << "\t" << exp(resultSum[j]/resultCount[j]);
-        }
-        std::cout << std::endl;
+        std::cout << bed.transcript << "\t" << bed.gene << "\t" << exp(value / norm) << std::endl;
+        
 
-        if (rnaSeq)
-            free(rnaSeq);
+        if (sequence)
+            free(sequence);
     }
 
     // destructors
@@ -129,45 +104,32 @@ int main_codonrate(int argc, const char *argv[])
 }
 
 
-int parseRates(int &elementSize, std::unordered_map<std::string, std::vector<double>> &rateTable, const std::string &fileName)
+void readCodonWeights(std::unordered_map<std::string, double> &codonWeights, const std::string &fileName)
 {
     std::ifstream fhs;
-    std::unordered_map<std::string, std::vector<double>> rate_table;
+    
     fhs.open(fileName);
     if (!fhs.is_open()) {
         std::cerr << "ribotools::codonrate::error, failed to open rates table " << fileName << std::endl;
-        return 1;
+        return;
     }
 
+    // parse file
     std::string line;
-
-    // read header
-    std::getline(fhs, line);
-    std::istringstream iss(line);
-    std::vector<std::string> tokens(std::istream_iterator<std::string>{iss},
-                                    std::istream_iterator<std::string>());
-    elementSize = tokens.size() - 4;
-
-    // read each line
     while (std::getline(fhs, line)) {
         
+        // skip header
+        if (line.at(0) == '#') continue; 
+
         // split line
         std::istringstream iss(line);
-        std::vector<std::string> tokens(std::istream_iterator<std::string>{iss},
-                                         std::istream_iterator<std::string>());
+        AminoAcid next;
 
-        // map key
-        std::string key = tokens[0];
-        std::vector<double> rates;
+        iss >> next.codon >> next.letter >> next.code >> next.name >> next.weight;
 
-        for (std::vector<std::string>::size_type i = 4; i != tokens.size(); i++) {
-            double value = std::stod(tokens[i]);
-            rates.push_back(value);
-        }
-
-        rateTable.insert({key, rates});
+        codonWeights[next.codon] = next.weight;
+        
     }
 
     fhs.close();
-    return 0;
 }
