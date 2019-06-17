@@ -61,11 +61,11 @@ int main_utrseq (int argc, const char *argv[])
         int span3pUTR = bed.span - bed.cdsEnd;
 
         if ((0 < span5pUTR) && use5pUTR) {
-            exportSequence(sequence, bed.name.c_str(), 0, bed.cdsStart);
+            exportSequence(sequence, bed.name.c_str(), std::max(0, bed.cdsStart - 500), bed.cdsStart);
         }
 
         if ((0 < span3pUTR) && (use5pUTR==false)) {
-            exportSequence(sequence, bed.name.c_str(), bed.cdsEnd, bed.span);
+            exportSequence(sequence, bed.name.c_str(), bed.cdsEnd, std::min(bed.span, bed.cdsEnd + 500));
         }
 
         if (sequence)

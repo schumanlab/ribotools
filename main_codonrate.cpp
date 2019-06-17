@@ -24,12 +24,12 @@ int main_codonrate(int argc, const char *argv[])
     }
 
     if (!(parser.find("--fasta") && parser.next(fileFasta))) {
-        std::cerr << "ribotools::codonrate::error, provide a BED file." << std::endl;
+        std::cerr << "ribotools::codonrate::error, provide a FASTA file." << std::endl;
         return 1;
     }
 
     if (!(parser.find("--rates") && parser.next(fileRates))) {
-        std::cerr << "ribotools::codonrate::error, provide a BED file." << std::endl;
+        std::cerr << "ribotools::codonrate::error, provide a RATE file." << std::endl;
         return 1;
     }
 

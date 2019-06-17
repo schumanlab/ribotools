@@ -165,10 +165,10 @@ tic
     
     
     
-end
-fprintf('Finished %d in %.8f\n',nBin, toc);
-fileName = sprintf('/Users/tushevg/Desktop/elongationRate_TP%d_16May2019.mat',nBin);
-save(fileName, 'result');
+%end
+%fprintf('Finished %d in %.8f\n',nBin, toc);
+%fileName = sprintf('/Users/tushevg/Desktop/elongationRate_TP%d_16May2019.mat',nBin);
+%save(fileName, 'result');
 
-end
+%end
 

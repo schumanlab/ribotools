@@ -22,17 +22,17 @@ int main_uorfs(int argc, const char *argv[])
     // parse command line parameters
     ParserArgv parser(argc, argv);
     if (!(parser.find("--bed") && parser.next(fileBed))) {
-        std::cerr << "ribotools::codonfc::error, provide BED file." << std::endl;
+        std::cerr << "ribotools::uorfs::error, provide BED file." << std::endl;
         return 1;
     }
         
     if (!(parser.find("--fasta") && parser.next(fileFasta))) {
-        std::cerr << "ribotools::codonfc::error, provide FASTA file." << std::endl;
+        std::cerr << "ribotools::uorfs::error, provide FASTA file." << std::endl;
         return 1;
     }
     
     if (!(parser.find("--bam") && parser.next(fileBam))) {
-        std::cerr << "ribotools::codonfc::error, provide BAM file." << std::endl;
+        std::cerr << "ribotools::uorfs::error, provide BAM file." << std::endl;
         return 1;
     }
 
@@ -40,7 +40,7 @@ int main_uorfs(int argc, const char *argv[])
     std::ifstream fhBed;
     fhBed.open(fileBed);
     if (!fhBed.is_open()) {
-        std::cerr << "codonNFC::Error, failed to open BED reference" << std::endl;
+        std::cerr << "ribotools::uorfs::error, failed to open BED reference" << std::endl;
         return 1;
     }
 
@@ -48,7 +48,7 @@ int main_uorfs(int argc, const char *argv[])
     // open FASTA file
     faidx_t *fhFai = fai_load(fileFasta.c_str());
     if (!fhFai) {
-        std::cerr << "codonNFC::Error, failed to load fasta reference" << std::endl;
+        std::cerr << "ribotools::uorfs::error, failed to load fasta reference" << std::endl;
         return 1;
     }
 
@@ -56,7 +56,7 @@ int main_uorfs(int argc, const char *argv[])
     // open BAM file
     htsFile *fhBam = hts_open(fileBam.c_str(), "r");
     if (!fhBam) {
-        std::cerr << "codonNFC::Error, failed to open BAM file " << fileBam << std::endl;
+        std::cerr << "ribotools::uorfs::error, failed to open BAM file " << fileBam << std::endl;
         return 1;
     }
 

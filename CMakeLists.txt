@@ -15,6 +15,7 @@ set(SOURCE
     parserargv.cpp parserargv.h
     main_asite.cpp
     main_codonfc.cpp
+    main_codonfreq.cpp
     main_codonrate.cpp
     main_features.cpp
     main_metagene.cpp
