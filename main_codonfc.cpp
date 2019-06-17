@@ -86,10 +86,17 @@ int main_codonfc(int argc, const char *argv[])
         bed.parseExons();
 
         // calculate footprint coverage
-        int offset = 20;
+        int offset = 0;
         std::vector<double> fc;
         calculateFootprintCoverage(fc, bed, hdrBam, fhBai, fhBam);
-        double fcAverage = std::accumulate(fc.begin() + offset, fc.end() - offset, 0.0) / fc.size();
+
+        if (fc.size() - 2*offset < 10) continue;
+
+        double fcAverage = std::accumulate(fc.begin() + offset, fc.end() - offset, 0.0);
+        if (fcAverage < 1.0) continue;
+        fcAverage /= fc.size();
+
+        
 
         // estimate NFC per codon
         normalizedFootprintCoveragePerCodon(fc, fcAverage, offset, bed, fhFai);
@@ -146,7 +153,9 @@ void calculateFootprintCoverage(std::vector<double> &fc, BedRecord &bed, bam_hdr
         int readLength = bam_cigar2qlen(algBam->core.n_cigar, bam_get_cigar(algBam));
 
         // calculate A-site coverage
-        int index = readStart + readLength/2 - queryStart;
+        int index = readStart + readLength - 17 - queryStart;
+        if (index < 0)
+            index -= 2;
         index = index - (index % 3);
         index = index / 3;
         if ((0 <= index) && (index < querySpan))
