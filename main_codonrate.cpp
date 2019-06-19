@@ -70,7 +70,7 @@ int main_codonrate(int argc, const char *argv[])
 
         char *sequence = faidx_fetch_seq(fhFai, bed.name.c_str(), 0, bed.span, &bed.span);
 
-        double value = 0.0;
+        double logSum = 0.0;
         int norm = 0;
 
         for (int c = bed.cdsStart; c < bed.cdsEnd; c += 3) {
@@ -82,17 +82,17 @@ int main_codonrate(int argc, const char *argv[])
             
             auto next = codonWeights.find(std::string(codon));
             if (next != codonWeights.end()) {
-                value += log(next->second);
+                logSum += std::log(next->second);
                 norm++;
             }            
         }
-
-
-
-        // write results
-        std::cout << bed.transcript << "\t" << bed.gene << "\t" << exp(value / norm) << std::endl;
         
-
+        // write results
+        if (norm > 0) {
+            std::cout << bed.transcript << "\t" << bed.gene << "\t" << std::exp(logSum / norm) << std::endl;
+        }
+            
+        
         if (sequence)
             free(sequence);
     }

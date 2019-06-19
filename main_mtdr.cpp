@@ -145,19 +145,18 @@ void normalizedFootprintCoveragePerCodon(const std::vector<int> &fc, double afc,
 }
 
 
+
 void calculateMTDR(const std::string &name, const AminoAcids &aainfo, const std::vector<int> &fc, double afc, const char *sequence, int qStart, int qEnd)
 {
-    
     int counter = 0;
     int fast = 0;
     int slow = 0;
     
-    double m = 1.0;
-    long long ex = 0;
+    double logSum = 0.0;
     
-
     for (int c = qStart; c < qEnd; c += 3) {
         double codonAFC = (fc[c] + fc[c + 1] + fc[c + 2]) / 3.0;
+        
         char codonSeq[4];
         std::strncpy(codonSeq, &sequence[c], 3);
         codonSeq[3] = '\0';
@@ -169,26 +168,21 @@ void calculateMTDR(const std::string &name, const AminoAcids &aainfo, const std:
         double timeValue = aainfo.timeDecoding(codon);
         fast++;
 
-        if (codonAFC > afc) {
+        if ((codonAFC / afc) > 3.0) {
             timeValue = aainfo.timePausing(codon);
             slow++;
             fast--;
         }
-            
-        int i;
-        double f1 = std::frexp(timeValue, &i);
-        m *= f1;
-        ex += i;
+        
+        // geometric mean accumulation
+        logSum += std::log(timeValue);
 
         counter++;
     }
 
-    double invN = 1.0 / counter;
-    double result = std::pow(std::numeric_limits<double>::radix, ex * invN) * std::pow(m, invN);
-
+    // geometric mean
     if (counter > 0)
-        //std::cout << name << "\t" << counter << "\t" << fast << "\t" << slow << "\t" << std::exp(std::abs(sum) / counter) << std::endl;
-        std::cout << name << "\t" << counter << "\t" << fast << "\t" << slow << "\t" << result << std::endl;
+        std::cout << name << "\t" << counter << "\t" << fast << "\t" << slow << "\t" << std::exp(logSum / counter) << std::endl;
 }
 
 double calculateAverageFootprintCoverage(const std::vector<int> &fc, int qStart, int qEnd)
@@ -198,10 +192,14 @@ double calculateAverageFootprintCoverage(const std::vector<int> &fc, int qStart,
     if (qEnd - qStart < 1) return 0.0;
 
     int sum = 0;
-    for (int k = qStart; k < qEnd; k++)
+    int norm = 0;
+    for (int k = qStart; k < qEnd; k++) {
         sum += fc[k];
+        if (fc[k] > 0) norm++;
+    }
+        
     
-    return static_cast<double>(sum) / (qEnd - qStart);
+    return static_cast<double>(sum) / norm;
 }
 
 
