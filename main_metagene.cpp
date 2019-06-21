@@ -9,6 +9,7 @@
 #include "parserargv.h"
 #include "bamhandle.h"
 #include "bedrecord.h"
+#include "utilities.h"
 
 int main_metagene(int argc, const char *argv[])
 {
@@ -48,11 +49,11 @@ int main_metagene(int argc, const char *argv[])
     double edge_max = 1.1;
     int bin_counts = 100;
     double bin_width = (edge_max - edge_min) / (bin_counts - 1);
-    int buffer_size = bin_counts * handlesBam.size();
-    std::vector<double> metageneSum(buffer_size, 0.0);
-    std::vector<int> metageneNorm(buffer_size, 0);
+    std::vector<double> metageneSum(bin_counts, 0.0);
+    std::vector<int> metageneNorm(bin_counts, 0);
 
     // loop over BED records
+    int count_genes = 0;
     std::string line;
     while (std::getline(fhBed, line)) {
         auto bed = BedRecord();
@@ -60,74 +61,48 @@ int main_metagene(int argc, const char *argv[])
         iss >> bed;
         bed.parseExons();
 
-        int codonsCDS = bed.cdsSpan / 3;
+        // calculate footprint coverage
+        std::vector<int> fc(bed.span, 0);
+        for (auto handle : handlesBam)
+            calculateFootprintCoverage(fc, handle, bed.transcript, 0, bed.span);
 
-        // calculate coverage per file
-        int f = 0;
-        for (auto handle : handlesBam) {
-            
-            std::map<int, int> depth;
-            std::vector<double> histSum(bin_counts, 0.0);
-            std::vector<int> histNorm(bin_counts, 0);
+        // average coverage in ORF
+        int countReadsORF = 0;
+        for (int k = bed.cdsStart; k < bed.cdsEnd; ++k)
+            countReadsORF += fc[k];
+        double afc = static_cast<double>(countReadsORF) / bed.cdsSpan;
+        if (afc < 0.1) continue;
 
-            handle->query(bed.transcript, 0, bed.span);
-            
-            // retrieve codon depth
-            //handle->codonDepth(depth, bed.transcript, bed.span, bed.cdsStart);
-            
-            // calculate average coverage in ORF
-            double averageDepth = 0.0;
-            int averageNorm = 0;
-            for (auto value : depth) {
-                if ((0 <= value.first) && (value.first <= codonsCDS)) {
-                    averageDepth += static_cast<double>(value.second);
-                    averageNorm++;
-                }
+        // metagene coverage
+        std::vector<double> histSum(bin_counts, 0.0);
+        std::vector<int> histNorm(bin_counts, 0);
+        for (int k = 0; k < bed.span; ++k) {
+            double idx = static_cast<double>(k - bed.cdsStart) / bed.cdsSpan;
+            idx = (idx - edge_min) / bin_width;
+            int xbin = static_cast<int>(idx);
+            if ((0 <= xbin) && (xbin < bin_counts)) {
+                histSum[xbin] += (fc[k] / afc);
+                histNorm[xbin]++;
             }
-            averageDepth /= averageNorm;
-            
-            if (averageDepth > 1.0) {
-
-                for (auto value : depth) {
-                    double x = static_cast<double>(value.first) / (bed.cdsSpan/3);
-                    int xbin = static_cast<int>((x - edge_min) / bin_width);
-                    if ((0 <= xbin) && (xbin < bin_counts)) {
-                        histSum[xbin] += value.second / averageDepth;
-                        histNorm[xbin]++;
-                    }
-                    //std::cout << xbin << "\t" << x << "\t" << value.first << "\t" << value.second << "\t" << value.second / averageDepth << std::endl;
-                }
-                
-                for (int k = 0; k < bin_counts; ++k) {
-
-                    double histAverage = 0.0;
-                    int idx = f + k;
-                    if (histNorm[k] != 0) {
-                        histAverage = histSum[k] / histNorm[k];
-                        metageneNorm[idx]++;
-                    }
-
-                    metageneSum[idx] += histAverage;
-                }
-
-            }
-
-            f += bin_counts;
         }
-        
+
+        // add to main 
+        for (int k = 0; k < bin_counts; ++k) {
+
+            if (histNorm[k] > 0) {
+                metageneSum[k] += (histSum[k] / histNorm[k]);
+                metageneNorm[k]++;
+            }
+
+        }
+
+        count_genes++;
     }
 
-    int k = 0;
-    for (int f = 0; f < metageneSum.size(); ++f) {
-        
-        std::cout << k << "\t" << metageneSum[f] << "\t" << metageneNorm[f] << std::endl;
-        k++;
-        if (k >= bin_counts)
-            k = 0;
-    }
+    for (int k = 0; k < bin_counts; ++k)
+        std::cout << k << "\t" << metageneSum[k] << "\t" << metageneNorm[k] << std::endl;
 
-
-
+    std::cerr << "genes: " << count_genes << std::endl;
 
     // destructors
     fhBed.close();
