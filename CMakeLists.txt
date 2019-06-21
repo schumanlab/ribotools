@@ -20,6 +20,7 @@ set(SOURCE
     main_codonrate.cpp
     main_features.cpp
     main_irate.cpp
+    main_length.cpp
     main_metagene.cpp
     main_mtdr.cpp
     main_uorfs.cpp
