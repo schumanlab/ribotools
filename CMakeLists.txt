@@ -23,6 +23,7 @@ set(SOURCE
     main_length.cpp
     main_metagene.cpp
     main_mtdr.cpp
+    main_poffset.cpp
     main_uorfs.cpp
     main_utrseq.cpp
     )
