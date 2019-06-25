@@ -1,10 +1,37 @@
 #include <iostream>
 #include <fstream>
-#include <map>
+#include <unordered_map>
 
 #include "parserargv.h"
 #include "bamhandle.h"
 #include "bedrecord.h"
+
+struct PSite {
+    std::string name;
+    int readLength;
+    int offset5p;
+    int offset3p;
+
+    bool operator==(const PSite &other) const {
+        return (name == other.name &&
+                readLength == other.readLength &&
+                offset5p == other.offset5p &&
+                offset3p == other.offset3p);
+    }
+};
+
+struct PSiteHasher {
+    std::size_t operator()(const PSite &other) const {
+        size_t value = 17;
+        value = value * 31 + std::hash<std::string>()(other.name);
+        value = value * 31 + std::hash<int>()(other.readLength);
+        value = value * 31 + std::hash<int>()(other.offset5p);
+        value = value * 31 + std::hash<int>()(other.offset3p);
+        return value;
+    }
+};
+
+
 
 int main_poffset(int argc, const char *argv[])
 {
@@ -42,7 +69,8 @@ int main_poffset(int argc, const char *argv[])
     // read bed file
     int counter = 0;
     std::string line;
-    std::map<std::string, std::map<int, std::map<int,int>>> offset_map;
+    std::unordered_map<PSite, int, PSiteHasher> psite_map;
+    
     while (std::getline(fhBed, line)) {
         auto bed = BedRecord();
         std::istringstream iss(line);
@@ -50,6 +78,7 @@ int main_poffset(int argc, const char *argv[])
         bed.parseExons();
 
         for (auto handle : handlesBam) {
+            std::string name = handle->name();
             handle->query(bed.transcript, bed.cdsStart - 1, bed.cdsStart);
             int reads = 0;
             
@@ -60,8 +89,15 @@ int main_poffset(int argc, const char *argv[])
                 int readEnd = readStart + readLength;
                 int offsetStart = readStart - bed.cdsStart;
                 int offsetEnd = readEnd - bed.cdsStart;
-                offset_map[handle->name()][readLength][offsetStart]++;
-                offset_map[handle->name()][readLength][offsetEnd]++;
+                
+                PSite next = {name, readLength, offsetStart, offsetEnd};
+                auto node = psite_map.find(next);
+                if (node == psite_map.end())
+                    psite_map[next] = 1;
+
+                psite_map[next]++;
+
+
                 reads++;
             }
             bam_destroy1(b);
@@ -71,33 +107,14 @@ int main_poffset(int argc, const char *argv[])
 
     }
 
-    for (auto name : offset_map)
-    {
-        for (auto length : name.second) {
-            int reads = 0;
-            int best_min = 0;
-            int best_max = 0;
-            int value_min = 0;
-            int value_max = 0;
-            for (auto offset : length.second) {
-                if (offset.second > value_min && offset.first < 0) {
-                    value_min = offset.second;
-                    best_min = offset.first;
-                }
-
-                if (offset.second > value_max && offset.first > 0) {
-                    value_max = offset.second;
-                    best_max = offset.first;
-                }
-
-                reads += offset.second;
-            }
-
-            std::cout << name.first << "\t" << length.first << "\t" << reads << "\t" << best_min << "\t" << best_max << "\t" << value_min << "\t" << value_max << std::endl;
-        }
-
-
+    for (auto node : psite_map) {
+        std::cout << node.first.name << "\t" 
+                  << node.first.readLength << "\t"
+                  << node.first.offset5p << "\t"
+                  << node.first.offset3p << "\t"
+                  << node.second << std::endl;
     }
+
 
     std::cerr << "BedRecords: " << counter << std::endl;
 
