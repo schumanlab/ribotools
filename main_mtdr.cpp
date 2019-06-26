@@ -183,7 +183,7 @@ void calculateMTDR(const std::string &name, const AminoAcids &aainfo, const std:
 
     // geometric mean
     if (counter > 0)
-        std::cout << name << "\t" << counter << "\t" << fast << "\t" << slow << "\t" << std::exp(logSum / counter) << std::endl;
+        std::cout << name << "\t" << counter << "\t" << fast << "\t" << slow << "\t" << 1/std::exp(logSum / counter) << std::endl;
 }
 
 

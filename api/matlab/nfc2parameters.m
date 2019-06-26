@@ -4,10 +4,10 @@ clear variables
 close all
 
 %% readCodonTable
-table = readPlainCodonTable('/Users/tushevg/Desktop/data/codonTable.txt');
+table = readPlainCodonTable('/Users/tushevg/Desktop/codonTable.txt');
 
 %% read codons list
-fh = fopen('codonsNFC_NplTotal_18Jun2019.txt','r');
+fh = fopen('/Users/tushevg/Desktop/aaNFC_SmtTotal.txt','r');
 txt = textscan(fh,'%s %n','delimiter','\t');
 fclose(fh);
 codon = txt{1};
@@ -43,7 +43,7 @@ X = exGaussPDF(params, timeDecoding);
 
 
 table.w = [timeDecoding, timePausing];
-writeCodonTable(table, '/Users/tushevg/Desktop/codonsParams_NplTotal_18Jun2019.txt');
+writeCodonTable(table, '/Users/tushevg/Desktop/codonsParams_SmtTotal_26Jun2019.txt');
 
 function table = readPlainCodonTable(fileName)
     
