@@ -8,6 +8,7 @@ int usage();
 int main_asite(int argc, const char *argv[]);
 int main_codonfreq(int argc, const char *argv[]);
 int main_codonrate(int argc, const char *argv[]);
+int main_count(int argc, const char *argv[]);
 int main_features(int argc, const char *argv[]);
 int main_irate(int argc, const char *argv[]);
 int main_length(int argc, const char *argv[]);
@@ -35,6 +36,8 @@ int main(int argc, const char *argv[])
     else if (subcommand == "codonfreq") return main_codonfreq(argc - 1, argv + 1);
 
     else if (subcommand == "codonrate") return main_codonrate(argc - 1, argv + 1);
+
+    else if (subcommand == "count") return main_count(argc - 1, argv + 1);
 
     else if (subcommand == "features") return main_features(argc - 1, argv + 1);
 
