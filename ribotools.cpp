@@ -5,7 +5,6 @@
 int version();
 int usage();
 
-int main_asite(int argc, const char *argv[]);
 int main_codonfreq(int argc, const char *argv[]);
 int main_codonrate(int argc, const char *argv[]);
 int main_count(int argc, const char *argv[]);
@@ -14,6 +13,7 @@ int main_irate(int argc, const char *argv[]);
 int main_length(int argc, const char *argv[]);
 int main_metagene(int argc, const char *argv[]);
 int main_mtdr(int argc, const char *argv[]);
+int main_pausing(int argc, const char *argv[]);
 int main_poffset(int argc, const char *argv[]);
 int main_uorfs(int argc, const char *argv[]);
 int main_utrseq(int argc, const char *argv[]);
@@ -31,8 +31,6 @@ int main(int argc, const char *argv[])
     
     else if (subcommand == "-v" || subcommand == "--version") return version();
 
-    else if (subcommand == "asite") return main_asite(argc - 1, argv + 1);
-
     else if (subcommand == "codonfreq") return main_codonfreq(argc - 1, argv + 1);
 
     else if (subcommand == "codonrate") return main_codonrate(argc - 1, argv + 1);
@@ -48,6 +46,8 @@ int main(int argc, const char *argv[])
     else if (subcommand == "metagene") return main_metagene(argc - 1, argv + 1);
 
     else if (subcommand == "mtdr") return main_mtdr(argc - 1, argv + 1);
+
+    else if (subcommand == "pausing") return main_pausing(argc - 1, argv + 1);
 
     else if (subcommand == "poffset") return main_poffset(argc - 1, argv + 1);
 

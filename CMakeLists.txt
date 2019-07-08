@@ -19,7 +19,6 @@ set(SOURCE
     bamhandle.cpp bamhandle.h
     bedrecord.cpp bedrecord.h
     parserargv.cpp parserargv.h
-    main_asite.cpp
     main_codonfreq.cpp
     main_codonrate.cpp
     main_count.cpp
@@ -28,6 +27,7 @@ set(SOURCE
     main_length.cpp
     main_metagene.cpp
     main_mtdr.cpp
+    main_pausing.cpp
     main_poffset.cpp
     main_uorfs.cpp
     main_utrseq.cpp

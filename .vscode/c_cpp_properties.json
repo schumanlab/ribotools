@@ -3,6 +3,7 @@
         {
             "name": "Mac",
             "includePath": [
+                "S{workspaceFolder}",
                 "${workspaceFolder}/**"
             ],
             "defines": [],
@@ -14,7 +15,6 @@
             "cStandard": "c11",
             "cppStandard": "c++17",
             "intelliSenseMode": "clang-x64",
-            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
             "configurationProvider": "vector-of-bool.cmake-tools"
         }
     ],
