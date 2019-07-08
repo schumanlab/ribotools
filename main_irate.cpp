@@ -57,7 +57,6 @@ int main_irate(int argc, const char *argv[])
         auto bed = BedRecord();
         std::istringstream iss(line);
         iss >> bed;
-        bed.parseExons();
 
         // translation efficiency
         auto record = te_map.find(bed.gene);

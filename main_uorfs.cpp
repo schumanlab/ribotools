@@ -85,7 +85,6 @@ int main_uorfs(int argc, const char *argv[])
         auto bed = BedRecord();
         std::istringstream iss(line);
         iss >> bed;
-        bed.parseExons();
 
         int countORF = 1;
         //int countORF = countReadsOverRegion(bed.transcript, bed.cdsStart, bed.cdsEnd, hdrBam, fhBai, fhBam);

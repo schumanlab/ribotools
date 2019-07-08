@@ -75,7 +75,6 @@ int main_poffset(int argc, const char *argv[])
         auto bed = BedRecord();
         std::istringstream iss(line);
         iss >> bed;
-        bed.parseExons();
 
         for (auto handle : handlesBam) {
             std::string name = handle->name();

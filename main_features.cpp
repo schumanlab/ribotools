@@ -49,7 +49,6 @@ int main_features(int argc, const char *argv[])
         auto bed = BedRecord();
         std::istringstream iss(line);
         iss >> bed;
-        bed.parseExons();
 
         char *sequence = faidx_fetch_seq(fhFai, bed.name.c_str(), 0, bed.span, &bed.span);
 

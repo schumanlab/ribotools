@@ -76,6 +76,7 @@ std::istream& operator>> (std::istream& in, BedRecord &data)
         temp.transcript = temp.name.substr(0, positionDelimiter);
         temp.gene = temp.name.substr(positionDelimiter + 1, temp.name.size() - positionDelimiter);
         data.swap(temp);
+        data.parseExons();
     }
     return in;
 }

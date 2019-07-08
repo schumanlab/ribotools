@@ -66,8 +66,7 @@ int main_codonfreq(int argc, const char *argv[])
         auto bed = BedRecord();
         std::istringstream iss(line);
         iss >> bed;
-        bed.parseExons();
-
+        
         //std::cout << bed.gene << std::endl;
 
         char *sequence = faidx_fetch_seq(fhFai, bed.name.c_str(), 0, bed.span, &bed.span);

@@ -79,7 +79,6 @@ int main_mtdr(int argc, const char *argv[])
         auto bed = BedRecord();
         std::istringstream iss(line);
         iss >> bed;
-        bed.parseExons();
 
         // calculate footprint coverage
         std::vector<int> fc(bed.span, 0);

@@ -67,7 +67,6 @@ int main_count(int argc, const char *argv[])
         auto bed = BedRecord();
         std::istringstream iss(line);
         iss >> bed;
-        bed.parseExons();
 
         // count reads per file
         int count_total = 0;

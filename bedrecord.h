@@ -31,7 +31,7 @@ public:
 
     static void listToArray(std::vector<int> &array, const std::string &list);
     friend std::istream& operator>> (std::istream& in, BedRecord &data);
-    void parseExons();
+    
     bool overlap(const std::string &readChrom, int readStart, int readEnd);
 
     int psite(int position);
@@ -39,6 +39,7 @@ public:
     static int codon(int position);
 
 private:
+    void parseExons();
     void swap(BedRecord &other);
     
 };
