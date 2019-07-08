@@ -2,7 +2,7 @@
 #define BAMHANDLE_H
 
 #include <iostream>
-#include <map>
+#include <vector>
 
 #include <htslib/hts.h>
 #include <htslib/sam.h>
@@ -16,6 +16,7 @@ public:
     std::string name();
     void query(const std::string &queryChrom, int queryStart, int queryEnd);
     int readBam(bam1_t *b);
+    void calculateFootprintCoverage(std::vector<int>& fc, const std::string &qName, int qStart, int qEnd);
     
 private:
     int m_mapq;

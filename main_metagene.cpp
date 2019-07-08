@@ -9,7 +9,6 @@
 #include "parserargv.h"
 #include "bamhandle.h"
 #include "bedrecord.h"
-#include "utilities.h"
 
 int main_metagene(int argc, const char *argv[])
 {
@@ -64,7 +63,7 @@ int main_metagene(int argc, const char *argv[])
         // calculate footprint coverage
         std::vector<int> fc(bed.span, 0);
         for (auto handle : handlesBam)
-            calculateFootprintCoverage(fc, handle, bed.transcript, 0, bed.span);
+            handle->calculateFootprintCoverage(fc, bed.transcript, 0, bed.span);
 
         // average coverage in ORF
         int countReadsORF = 0;

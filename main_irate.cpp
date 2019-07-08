@@ -5,7 +5,6 @@
 #include "parserargv.h"
 #include "bedrecord.h"
 #include "bamhandle.h"
-#include "utilities.h"
 
 void readTranslationEfficiency(std::unordered_map<std::string, double> &te_map, const std::string &fileName);
 
@@ -68,7 +67,7 @@ int main_irate(int argc, const char *argv[])
         // calculate footprint coverage
         std::vector<int> fc(bed.cdsSpan, 0);
         for (auto handle : handlesBam)
-            calculateFootprintCoverage(fc, handle, bed.transcript, bed.cdsStart, bed.cdsEnd);
+            handle->calculateFootprintCoverage(fc, bed.transcript, bed.cdsStart, bed.cdsEnd);
 
         // calculate Nc
         int Nc = bed.cdsSpan / 3;

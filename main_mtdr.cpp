@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
+#include <numeric>
 
 #include <htslib/faidx.h>
 #include <htslib/sam.h>
@@ -10,7 +11,6 @@
 #include "bedrecord.h"
 #include "bamhandle.h"
 #include "aminoacids.h"
-#include "utilities.h"
 
 void readCodonParameters(AminoAcids &aainfo, const std::string &fileName);
 void normalizedFootprintCoveragePerCodon(const std::vector<int> &fc, double afc, const char *sequence, int qStart, int qEnd);
@@ -84,16 +84,19 @@ int main_mtdr(int argc, const char *argv[])
         // calculate footprint coverage
         std::vector<int> fc(bed.span, 0);
         for (auto handle : handlesBam)
-            calculateFootprintCoverage(fc, handle, bed.transcript, 0, bed.span);
+            handle->calculateFootprintCoverage(fc, bed.transcript, 0, bed.span);
 
         // calculate average in CDS
         int qStart = bed.cdsStart;
         int qEnd = bed.cdsEnd;
+        int qOffset = 0;
         if (calculateNFC) {
+            qOffset = 60; // 20 codons to avoid initiaiton / termination
             qStart += 60; // 20 codons to avoid initiaiton
             qEnd -= 60; // 20 codons to avoid termination
+
         }
-        double afc = calculateAverageFootprintCoverage(fc, qStart, qEnd);
+        double afc = std::accumulate(fc.begin()+qOffset, fc.end()-qOffset, 0) / (qEnd - qStart);
         
         // filter based on average
         if (afc == 0.0) continue;
@@ -154,7 +157,7 @@ void calculateMTDR(const std::string &name, const AminoAcids &aainfo, const std:
     double logSum = 0.0;
     
     for (int c = qStart; c < qEnd; c += 3) {
-        double codonAFC = (fc[c] + fc[c + 1] + fc[c + 2]) / 3.0;
+        //double codonAFC = (fc[c] + fc[c + 1] + fc[c + 2]) / 3.0;
         
         char codonSeq[4];
         std::strncpy(codonSeq, &sequence[c], 3);

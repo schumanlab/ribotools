@@ -93,38 +93,22 @@ int BamHandle::readBam(bam1_t *b)
 }
 
 
-/*
-void BamHandle::codonDepth(std::map<int, int> &depth, const std::string &name, int geneSpan, int cdsStart)
+void BamHandle::calculateFootprintCoverage(std::vector<int> &fc, const std::string &qName, int qStart, int qEnd)
 {
-    int chromTid = bam_name2id(header, name.c_str());
-
-    hts_itr_t *iterator = bam_itr_queryi(bai, chromTid, 0, geneSpan);
     bam1_t *alignment = bam_init1();
-    int ret = 0;
-    while ((ret = sam_itr_next(bam, iterator, alignment)) >= 0) {
+    query(qName, qStart, qEnd);
+
+    while (readBam(alignment) > 0) {
 
         int readStart = alignment->core.pos;
         int readLength = bam_cigar2qlen(alignment->core.n_cigar, bam_get_cigar(alignment));
 
-        // calculate P-site per read
-        int readPsite = readStart + readLength - 17 - cdsStart;
-        
-        //std::cout << readStart << "\t" << readEnd << "\t" << readLength << "\t" << readStart - cdsStart << "\t" << readEnd - cdsStart << std::endl;
-        if (readPsite < 0)
-            readPsite -= 2;
-        
-        readPsite = (readPsite - (readPsite % 3)) / 3;
-        depth[readPsite]++;
-         
-        
+        // accumulate P-site per read
+        int readPsite = readStart + readLength - 17 - qStart;
+        if ((0<= readPsite) && (readPsite < fc.size()))
+            fc[readPsite]++;
     }
-
+    
     if (alignment)
         bam_destroy1(alignment);
-    
-    if (iterator)
-        bam_itr_destroy(iterator);
-
-    //return count;
 }
- */
