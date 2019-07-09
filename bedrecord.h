@@ -1,5 +1,5 @@
-#ifndef BEDRECORD_HPP
-#define BEDRECORD_HPP
+#ifndef BEDRECORD_H
+#define BEDRECORD_H
 
 #include <sstream>
 #include <string>

@@ -1,9 +1,9 @@
 #include <iostream>
 #include <fstream>
 
-#include "parserargv.hpp"
-#include "bamhandle.hpp"
-#include "bedrecord.hpp"
+#include "parserargv.h"
+#include "bamhandle.h"
+#include "bedrecord.h"
 
 int main_count(int argc, const char *argv[])
 {

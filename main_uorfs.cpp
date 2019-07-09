@@ -5,8 +5,8 @@
 #include <htslib/sam.h>
 #include <htslib/hts.h>
 
-#include "parserargv.hpp"
-#include "bedrecord.hpp"
+#include "parserargv.h"
+#include "bedrecord.h"
 
 bool uORFs_checkStart(const std::string &codonSeq);
 bool uORFs_checkStop(const std::string &codonSeq);

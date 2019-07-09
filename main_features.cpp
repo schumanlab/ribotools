@@ -4,8 +4,8 @@
 
 #include <htslib/faidx.h>
 
-#include "parserargv.hpp"
-#include "bedrecord.hpp"
+#include "parserargv.h"
+#include "bedrecord.h"
 
 double getGCcontent(char *sequence, int start, int end);
 

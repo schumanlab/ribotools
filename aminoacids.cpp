@@ -1,4 +1,4 @@
-#include "aminoacids.hpp"
+#include "aminoacids.h"
 
 AminoAcids::AminoAcids()
 {

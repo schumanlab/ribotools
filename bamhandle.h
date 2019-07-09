@@ -1,5 +1,5 @@
-#ifndef BAMHANDLE_HPP
-#define BAMHANDLE_HPP
+#ifndef BAMHANDLE_H
+#define BAMHANDLE_H
 
 #include <iostream>
 #include <vector>

@@ -1,5 +1,5 @@
-#ifndef PARSERARGV_HPP
-#define PARSERARGV_HPP
+#ifndef PARSERARGV_H
+#define PARSERARGV_H
 
 #include <string>
 #include <vector>

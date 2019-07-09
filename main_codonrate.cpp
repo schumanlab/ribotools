@@ -5,8 +5,8 @@
 
 #include <htslib/faidx.h>
 
-#include "parserargv.hpp"
-#include "bedrecord.hpp"
+#include "parserargv.h"
+#include "bedrecord.h"
 
 struct AminoAcid {
     char letter;

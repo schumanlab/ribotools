@@ -1,4 +1,4 @@
-#include "bamhandle.hpp"
+#include "bamhandle.h"
 
 BamHandle::BamHandle(const std::string &fileName, int mapq, int length) :
     m_mapq(mapq),

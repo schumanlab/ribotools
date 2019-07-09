@@ -3,8 +3,8 @@
 
 #include <htslib/faidx.h>
 
-#include "parserargv.hpp"
-#include "bedrecord.hpp"
+#include "parserargv.h"
+#include "bedrecord.h"
 
 void exportSequence(const char *sequence, const char *name, int start, int end);
 

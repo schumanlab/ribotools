@@ -4,9 +4,9 @@
 
 #include <htslib/faidx.h>
 
-#include "parserargv.hpp"
-#include "bamhandle.hpp"
-#include "bedrecord.hpp"
+#include "parserargv.h"
+#include "bamhandle.h"
+#include "bedrecord.h"
 
 int main_pausing(int argc, const char *argv[])
 {

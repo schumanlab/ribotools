@@ -2,9 +2,9 @@
 #include <fstream>
 #include <unordered_map>
 
-#include "parserargv.hpp"
-#include "bedrecord.hpp"
-#include "bamhandle.hpp"
+#include "parserargv.h"
+#include "bedrecord.h"
+#include "bamhandle.h"
 
 void readTranslationEfficiency(std::unordered_map<std::string, double> &te_map, const std::string &fileName);
 

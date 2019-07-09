@@ -15,10 +15,10 @@ endif()
 project(ribotools)
 set(SOURCE 
     ribotools.cpp
-    aminoacids.cpp aminoacids.hpp
-    bamhandle.cpp bamhandle.hpp
-    bedrecord.cpp bedrecord.hpp
-    parserargv.cpp parserargv.hpp
+    aminoacids.cpp aminoacids.h
+    bamhandle.cpp bamhandle.h
+    bedrecord.cpp bedrecord.h
+    parserargv.cpp parserargv.h
     main_codonfreq.cpp
     main_codonrate.cpp
     main_count.cpp

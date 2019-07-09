@@ -1,4 +1,5 @@
 {
+    "C_Cpp.loggingLevel": "Debug",
     "files.associations": {
         "__bit_reference": "cpp",
         "__config": "cpp",

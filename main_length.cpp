@@ -2,8 +2,8 @@
 #include <map>
 #include <htslib/sam.h>
 
-#include "parserargv.hpp"
-#include "bamhandle.hpp"
+#include "parserargv.h"
+#include "bamhandle.h"
 
 int main_length(int argc, const char *argv[])
 {
