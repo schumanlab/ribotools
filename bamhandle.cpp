@@ -85,7 +85,7 @@ int BamHandle::readBam(bam1_t *b)
         ret = m_iterator ? sam_itr_next(m_bam, m_iterator, b) : sam_read1(m_bam, m_header, b);
         if ( ret < 0) break;
         if ( b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL | BAM_FDUP) ) continue;
-        if ( (int)b->core.qual < m_mapq ) continue;
+        if ( static_cast<int>(b->core.qual) < m_mapq ) continue;
         if ( m_length && bam_cigar2qlen(b->core.n_cigar, bam_get_cigar(b)) < m_length ) continue;
         break;
     }
@@ -98,15 +98,18 @@ void BamHandle::calculateFootprintCoverage(std::vector<int> &fc, const std::stri
     bam1_t *alignment = bam_init1();
     query(qName, qStart, qEnd);
 
+    auto pileup = [](int &n){n++;};
+
     while (readBam(alignment) > 0) {
 
+        // read linear coordinates
         int readStart = alignment->core.pos;
         int readLength = bam_cigar2qlen(alignment->core.n_cigar, bam_get_cigar(alignment));
 
-        // accumulate P-site per read
-        int readPsite = readStart + readLength - 17 - qStart;
-        if ((0<= readPsite) && (readPsite < fc.size()))
-            fc[readPsite]++;
+        int offsetStart = (qStart < readStart) ? (readStart - qStart) : 0;
+        int offsetEnd = ((offsetStart + readLength) < qEnd) ? (offsetStart + readLength) : (qEnd - qStart);
+        std::for_each(fc.begin() + offsetStart, fc.begin() + offsetEnd, pileup);
+
     }
     
     if (alignment)
@@ -114,17 +117,23 @@ void BamHandle::calculateFootprintCoverage(std::vector<int> &fc, const std::stri
 }
 
 
-void BamHandle::calculateASiteCoverage(std::vector<int> &fc, const std::string &qName, int qStart, int qEnd, int qRef)
+void BamHandle::calculateSiteCoverage(std::vector<int> &fc, const std::string &qName, int qStart, int qEnd, int qRef, bool useAsite)
 {
     bam1_t *alignment = bam_init1();
-
     query(qName, qStart, qEnd);
+
     while (readBam(alignment) > 0) {
-        int readRelativeStart = alignment->core.pos + 12 - qRef;
-        readRelativeStart = readRelativeStart - (readRelativeStart % 3);
-        int readCodonIndex = readRelativeStart / 3;
-        if ((0 <= readCodonIndex) && (readCodonIndex < fc.size()))
-            fc[readCodonIndex]++;
+
+        // read linear coordinates
+        int readStart = alignment->core.pos;
+        int readPsite = (readStart + 12 - qRef);
+        int codonIndex = (readPsite - (readPsite % 3)) / 3;
+
+        if (useAsite)
+            codonIndex += 1; // increment P-site codon with 1 to get A-site codon
+
+        if ((0 <= codonIndex) && (static_cast<size_t>(codonIndex) < fc.size()))
+            fc.at(codonIndex)++;
 
     }
 

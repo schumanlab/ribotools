@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 #include <htslib/hts.h>
 #include <htslib/sam.h>
@@ -17,7 +18,7 @@ public:
     void query(const std::string &queryChrom, int queryStart, int queryEnd);
     int readBam(bam1_t *b);
     void calculateFootprintCoverage(std::vector<int> &fc, const std::string &qName, int qStart, int qEnd);
-    void calculateASiteCoverage(std::vector<int> &fc, const std::string &qName, int qStart, int qEnd, int qRef);
+    void calculateSiteCoverage(std::vector<int> &fc, const std::string &qName, int qStart, int qEnd, int qRef, bool useAsite);
 
 private:
     int m_mapq;
