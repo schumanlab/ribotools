@@ -7,10 +7,10 @@
 #include <htslib/sam.h>
 #include <htslib/hts.h>
 
-#include "parserargv.h"
-#include "bedrecord.h"
-#include "bamhandle.h"
-#include "aminoacids.h"
+#include "parserargv.hpp"
+#include "bedrecord.hpp"
+#include "bamhandle.hpp"
+#include "aminoacids.hpp"
 
 void readCodonParameters(AminoAcids &aainfo, const std::string &fileName);
 void normalizedFootprintCoveragePerCodon(const std::vector<int> &fc, double afc, const char *sequence, int qStart, int qEnd);

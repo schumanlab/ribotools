@@ -1,4 +1,4 @@
-#include "bamhandle.h"
+#include "bamhandle.hpp"
 
 BamHandle::BamHandle(const std::string &fileName, int mapq, int length) :
     m_mapq(mapq),
@@ -109,6 +109,25 @@ void BamHandle::calculateFootprintCoverage(std::vector<int> &fc, const std::stri
             fc[readPsite]++;
     }
     
+    if (alignment)
+        bam_destroy1(alignment);
+}
+
+
+void BamHandle::calculateASiteCoverage(std::vector<int> &fc, const std::string &qName, int qStart, int qEnd, int qRef)
+{
+    bam1_t *alignment = bam_init1();
+
+    query(qName, qStart, qEnd);
+    while (readBam(alignment) > 0) {
+        int readRelativeStart = alignment->core.pos + 12 - qRef;
+        readRelativeStart = readRelativeStart - (readRelativeStart % 3);
+        int readCodonIndex = readRelativeStart / 3;
+        if ((0 <= readCodonIndex) && (readCodonIndex < fc.size()))
+            fc[readCodonIndex]++;
+
+    }
+
     if (alignment)
         bam_destroy1(alignment);
 }

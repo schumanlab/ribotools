@@ -1,5 +1,5 @@
-#ifndef AMINOACIDS_H
-#define AMINOACIDS_H
+#ifndef AMINOACIDS_HPP
+#define AMINOACIDS_HPP
 
 #include <iostream>
 #include <unordered_map>

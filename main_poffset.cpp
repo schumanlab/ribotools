@@ -2,9 +2,9 @@
 #include <fstream>
 #include <unordered_map>
 
-#include "parserargv.h"
-#include "bamhandle.h"
-#include "bedrecord.h"
+#include "parserargv.hpp"
+#include "bamhandle.hpp"
+#include "bedrecord.hpp"
 
 struct PSite {
     std::string name;

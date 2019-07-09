@@ -6,9 +6,9 @@
 #include <htslib/sam.h>
 #include <htslib/hts.h>
 
-#include "parserargv.h"
-#include "bamhandle.h"
-#include "bedrecord.h"
+#include "parserargv.hpp"
+#include "bamhandle.hpp"
+#include "bedrecord.hpp"
 
 int main_metagene(int argc, const char *argv[])
 {

@@ -3,7 +3,6 @@
         {
             "name": "Mac",
             "includePath": [
-                "S{workspaceFolder}",
                 "${workspaceFolder}/**"
             ],
             "defines": [],

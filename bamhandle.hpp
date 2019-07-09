@@ -1,5 +1,5 @@
-#ifndef BAMHANDLE_H
-#define BAMHANDLE_H
+#ifndef BAMHANDLE_HPP
+#define BAMHANDLE_HPP
 
 #include <iostream>
 #include <vector>
@@ -16,8 +16,9 @@ public:
     std::string name();
     void query(const std::string &queryChrom, int queryStart, int queryEnd);
     int readBam(bam1_t *b);
-    void calculateFootprintCoverage(std::vector<int>& fc, const std::string &qName, int qStart, int qEnd);
-    
+    void calculateFootprintCoverage(std::vector<int> &fc, const std::string &qName, int qStart, int qEnd);
+    void calculateASiteCoverage(std::vector<int> &fc, const std::string &qName, int qStart, int qEnd, int qRef);
+
 private:
     int m_mapq;
     int m_length;

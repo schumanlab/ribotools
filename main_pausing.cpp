@@ -1,11 +1,12 @@
 #include <iostream>
 #include <fstream>
+#include <numeric>
 
 #include <htslib/faidx.h>
 
-#include "parserargv.h"
-#include "bamhandle.h"
-#include "bedrecord.h"
+#include "parserargv.hpp"
+#include "bamhandle.hpp"
+#include "bedrecord.hpp"
 
 int main_pausing(int argc, const char *argv[])
 {
@@ -57,9 +58,31 @@ int main_pausing(int argc, const char *argv[])
     // loop over BED record
     std::string line;
     while (std::getline(fhBed, line)) {
+
+        // read bed record
         auto bed = BedRecord();
         std::istringstream iss(line);
         iss >> bed;
+
+        // calculate CDS coverage
+        std::vector<int> fc(bed.cdsSpan/3, 0);
+        for (auto handle : handlesBam)
+            handle->calculateASiteCoverage(fc, bed.transcript, 0, bed.span, bed.cdsStart);
+        
+        for(int i = 0; i < fc.size(); ++i)
+            std::cout << i << "\t" << fc[i] << std::endl;
+
+        int offset = std::min(150, bed.cdsSpan/3);
+        double fcs = static_cast<double>(std::accumulate(fc.begin(), fc.begin() + offset, 0)) / offset;
+        std::cout << "SUM " << fcs << std::endl;
+        
+        // retrieve sequence
+        //char *sequence = faidx_fetch_seq(fhFai, bed.name.c_str(), 0, bed.span, &bed.span);
+
+
+
+        //if (sequence)
+        //    free(sequence);
     }
 
     // destructors

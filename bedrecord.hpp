@@ -1,5 +1,5 @@
-#ifndef BEDRECORD_H
-#define BEDRECORD_H
+#ifndef BEDRECORD_HPP
+#define BEDRECORD_HPP
 
 #include <sstream>
 #include <string>
@@ -44,4 +44,4 @@ private:
     
 };
 
-#endif /* BEDLINE_H */
+#endif /* BEDRECORD_HPP */
