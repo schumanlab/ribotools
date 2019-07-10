@@ -8,44 +8,7 @@
 #include "parserargv.h"
 #include "bamhandle.h"
 #include "bedrecord.h"
-
-
-void slidingAverageForward(std::vector<double> &sa, const std::vector<int> &data, int window_size)
-{
-    int window_elements = 0;
-    int window_sum = 0;
-    std::vector<double>::iterator it_sa = sa.begin();
-    for (std::vector<int>::const_iterator it = data.begin(); it != data.end(); ++it) {
-        window_sum += *it;
-        window_elements++;
-        if (window_elements > window_size) {
-            window_elements--;
-            window_sum -= *(it - window_size);
-        }
-        *it_sa = static_cast<double>(window_sum) / window_elements;
-        ++it_sa;
-    }
-}
-
-
-void slidingAverageReverse(std::vector<double> &sa, const std::vector<int> &data, int window_size)
-{
-    int window_elements = 0;
-    int window_sum = 0;
-    std::vector<double>::reverse_iterator it_sa = sa.rbegin();
-    for (std::vector<int>::const_reverse_iterator it = data.rbegin(); it != data.rend(); ++it) {
-        window_sum += *it;
-        window_elements++;
-        if (window_elements > window_size) {
-            window_elements--;
-            window_sum -= *(it - window_size);
-        }
-        *it_sa = static_cast<double>(window_sum) / window_elements;
-        ++it_sa;
-    }
-
-}
-
+#include "aminoacids.h"
 
 
 int main_pausing(int argc, const char *argv[])
@@ -53,6 +16,10 @@ int main_pausing(int argc, const char *argv[])
     std::string fileBed;
     std::string fileFasta;
     std::vector <BamHandle*> handlesBam;
+
+    const int backgroundWindow_basic = 150;
+    const int backgroundWindow_flank = 5;
+    const int skipCodons = 10;
 
     // parse command line parameters
     ParserArgv parser(argc, argv);
@@ -97,6 +64,7 @@ int main_pausing(int argc, const char *argv[])
 
     // loop over BED record
     std::string line;
+    int line_counter = 0;
     while (std::getline(fhBed, line)) {
 
         // read bed record
@@ -104,59 +72,90 @@ int main_pausing(int argc, const char *argv[])
         std::istringstream iss(line);
         iss >> bed;
 
-        int countCodons = bed.cdsSpan / 3;
+        int lengthCodons = bed.cdsSpan / 3;
+
+        // check if codon length is too small
+        if (lengthCodons <= 2*skipCodons + 2*backgroundWindow_flank + 1) continue;
 
         // calculate A-site codon coverage
-        std::vector<int> codons(static_cast<size_t>(countCodons), 0);
+        std::vector<int> codons(static_cast<size_t>(lengthCodons), 0);
         for (auto handle : handlesBam)
             handle->calculateSiteCoverage(codons, bed.transcript, 0, bed.span, bed.cdsStart, true);
 
-        //int i = 0;
-        //for(int val : codons)
-        //    std::cout << i++ << "\t" << val << std::endl;
+        // count empty codons
+        int emptyCodons = static_cast<int>(std::count(codons.begin(), codons.end(), 0.0));
+        double emptyRatio = static_cast<double>(emptyCodons) / lengthCodons;
+
+        // get average coverage
+        double background_average = static_cast<double>(std::accumulate(codons.begin(), codons.end(), 0)) / lengthCodons;
+
+        // fiter based on coverage and empty codons
+        if (background_average < 0.2 && emptyRatio > 0.1) continue;
+
 
         // calculate background
-        int spanWindow = std::min(150, countCodons);
-        double background_basic = static_cast<double>(std::accumulate(codons.begin(), codons.begin() + spanWindow, 0)) / spanWindow;
-        std::vector<double> codons_next(static_cast<size_t>(countCodons), 0.0);
-        std::vector<double> codons_prev(static_cast<size_t>(countCodons), 0.0);
-        slidingAverageForward(codons_prev, codons, 5);
-        slidingAverageReverse(codons_next, codons, 5);
-
+        int backgrounWindow_offset = std::min(backgroundWindow_basic, lengthCodons - 2*skipCodons);
+        double background_basic = static_cast<double>(std::accumulate(codons.begin() + skipCodons, codons.begin() + backgrounWindow_offset, 0)) / backgrounWindow_offset;
 
         // retrieve sequence
         char *sequence = faidx_fetch_seq(fhFai, bed.name.c_str(), 0, bed.span, &bed.span);
+        std::vector<int>::const_iterator it;
+        std::vector<int>::const_iterator it_prev;
+        std::vector<int>::const_iterator it_next;
+        int idx_codon = skipCodons;
+        auto aa = AminoAcids();
 
-        for (int idx_codon = 10; idx_codon < (countCodons - 10); ++idx_codon) {
+        for (it = codons.begin() + skipCodons; it != (codons.end() - skipCodons); ++it)
+        {
+            // calculate previous background
+            double background_prev = 0.0;
+            it_prev = it - backgroundWindow_flank;
+            if (codons.begin() <= it_prev)
+                background_prev = static_cast<double>(std::accumulate(it_prev, it, background_prev)) / backgroundWindow_flank;
 
-            // calculate background next
-            int idx_next = idx_codon + 1;
-            double background_next = (idx_next < countCodons) ? codons_next.at(idx_next) : 0.0;
-
-            // calculate background previous
-            int idx_prev = idx_codon - 1;
-            double background_prev = (0 < idx_prev) ? codons_prev.at(idx_prev) : 0.0;
+            // calculate next background
+            double background_next = 0.0;
+            it_next = it + backgroundWindow_flank + 1;
+            if ((it + 1) < codons.end() && (it_next <= codons.end()))
+                background_next = static_cast<double>(std::accumulate(it+1, it_next, background_next)) / backgroundWindow_flank;
 
             // background value
             double background = std::max(background_next, background_prev);
             background = std::max(background, background_basic);
 
             // zscore
-            double zscore = (codons.at(idx_codon) - background) / std::sqrt(background);
+            double zscore = (*it - background) / std::sqrt(background);
 
-
+            // current codon code
             int idx_nucleotide = idx_codon * 3 + bed.cdsStart;
             char codon[4];
             std::strncpy(codon, &sequence[idx_nucleotide], 3);
             codon[3] = '\0';
-            std::cout << idx_codon << "\t" << codon << "\t" << codons.at(idx_codon) << "\t" << background << "\t" << zscore << std::endl;
 
+            aa.addTimePausing(std::string(codon), zscore);
+
+            // output
+            /*
+            std::cout << idx_codon << "\t"
+                      << codon << "\t"
+                      << *it << "\t"
+                      << background << "\t"
+                      << zscore << std::endl;
+            */
+
+            // update codon counter
+            idx_codon++;
         }
 
+        aa.log(bed.name);
 
         if (sequence)
             free(sequence);
+
+        line_counter++;
     }
+
+    std::cerr << "used genes: " << line_counter << std::endl;
 
     // destructors
     fhBed.close();

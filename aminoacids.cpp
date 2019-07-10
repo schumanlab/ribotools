@@ -167,6 +167,15 @@ void AminoAcids::setTimePausing(const std::string &codon, double valueTime)
 }
 
 
+void AminoAcids::addTimePausing(const std::string &codon, double timeValue)
+{
+    auto node = m_map.find(codon);
+    if (node == m_map.end()) return;
+    node->second.timePausing += timeValue;
+    node->second.count++;
+}
+
+
 double AminoAcids::timeDecoding(const std::string &codon) const
 {
     auto node = m_map.find(codon);
@@ -194,4 +203,19 @@ void AminoAcids::write()
                   << node.second.count << "\t"
                   << node.second.timeDecoding << "\t"
                   << node.second.timePausing << std::endl;
+}
+
+
+void AminoAcids::log(const std::string &label)
+{
+    for (auto node : m_map) {
+        double valueAverage = 0.0;
+        if (0 < node.second.count)
+            valueAverage = node.second.timePausing / node.second.count;
+
+        std::cout << label << "\t"
+                  << node.second.codon << "\t"
+                  << node.second.count << "\t"
+                  << valueAverage << std::endl;
+    }
 }

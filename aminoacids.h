@@ -2,7 +2,8 @@
 #define AMINOACIDS_H
 
 #include <iostream>
-#include <unordered_map>
+#include <map>
+#include <cmath>
 
 class AminoAcids
 {
@@ -14,11 +15,13 @@ public:
 
     void setTimeDecoding(const std::string &codon, double timeValue);
     void setTimePausing(const std::string &codon, double timeValue);
+    void addTimePausing(const std::string &codon, double timeValue);
     
     double timeDecoding(const std::string &codon) const;
     double timePausing(const std::string &codon) const;
     
     void write();
+    void log(const std::string &label);
 
 private:
     struct Node
@@ -32,7 +35,7 @@ private:
         std::string name;
     };
 
-    std::unordered_map<std::string, Node> m_map;
+    std::map<std::string, Node> m_map;
 };
 
 #endif
