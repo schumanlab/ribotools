@@ -62,6 +62,9 @@ int main_pausing(int argc, const char *argv[])
         return 1;
     }
 
+    // output header
+    std::cout << "# name\tcodon\tn.codons\tn.asites\tsum.zscore" << std::endl;
+
     // loop over BED record
     std::string line;
     int line_counter = 0;
@@ -83,14 +86,15 @@ int main_pausing(int argc, const char *argv[])
             handle->calculateSiteCoverage(codons, bed.transcript, 0, bed.span, bed.cdsStart, true);
 
         // count empty codons
-        int emptyCodons = static_cast<int>(std::count(codons.begin(), codons.end(), 0.0));
-        double emptyRatio = static_cast<double>(emptyCodons) / lengthCodons;
+        //int emptyCodons = static_cast<int>(std::count(codons.begin(), codons.end(), 0));
+        //double emptyRatio = static_cast<double>(emptyCodons) / lengthCodons;
 
         // get average coverage
         double background_average = static_cast<double>(std::accumulate(codons.begin(), codons.end(), 0)) / lengthCodons;
 
         // fiter based on coverage and empty codons
-        if (background_average < 0.2 && emptyRatio > 0.1) continue;
+        //if (background_average < 0.1 || emptyRatio > 0.75) continue;
+        if (background_average < 0.1) continue;
 
 
         // calculate background
@@ -102,11 +106,13 @@ int main_pausing(int argc, const char *argv[])
         std::vector<int>::const_iterator it;
         std::vector<int>::const_iterator it_prev;
         std::vector<int>::const_iterator it_next;
-        int idx_codon = skipCodons;
         auto aa = AminoAcids();
 
         for (it = codons.begin() + skipCodons; it != (codons.end() - skipCodons); ++it)
         {
+            // skip empty codons
+            if (*it == 0) continue;
+
             // calculate previous background
             double background_prev = 0.0;
             it_prev = it - backgroundWindow_flank;
@@ -123,30 +129,26 @@ int main_pausing(int argc, const char *argv[])
             double background = std::max(background_next, background_prev);
             background = std::max(background, background_basic);
 
+            // skip if background is empty
+            if (background == 0.0) continue;
+
             // zscore
             double zscore = (*it - background) / std::sqrt(background);
 
             // current codon code
+            int idx_codon = static_cast<int>(it - codons.begin());
             int idx_nucleotide = idx_codon * 3 + bed.cdsStart;
             char codon[4];
             std::strncpy(codon, &sequence[idx_nucleotide], 3);
             codon[3] = '\0';
 
-            aa.addTimePausing(std::string(codon), zscore);
+            aa.addTime(std::string(codon), zscore, static_cast<double>(*it));
 
-            // output
-            /*
-            std::cout << idx_codon << "\t"
-                      << codon << "\t"
-                      << *it << "\t"
-                      << background << "\t"
-                      << zscore << std::endl;
-            */
-
-            // update codon counter
-            idx_codon++;
+            // debug output
+            //std::cout << idx_codon << "\t" << codon << "\t" << *it << "\t" << background << "\t" << zscore << std::endl;
         }
 
+        // output of AminoAcid map
         aa.log(bed.name);
 
         if (sequence)
