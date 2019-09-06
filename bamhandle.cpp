@@ -3,6 +3,7 @@
 BamHandle::BamHandle(const std::string &fileName, int mapq, int length) :
     m_mapq(mapq),
     m_length(length),
+    m_reads(0),
     m_file(fileName),
     m_bam(nullptr),
     m_bai(nullptr),
@@ -139,4 +140,42 @@ void BamHandle::calculateSiteCoverage(std::vector<int> &fc, const std::string &q
 
     if (alignment)
         bam_destroy1(alignment);
+}
+
+
+void BamHandle::countUniqueReads()
+{
+    bam1_t *alignment = bam_init1();
+    m_reads = 0; // reset counter
+
+    // check if iterator is set and reset
+    if (m_iterator) {
+        bam_itr_destroy(m_iterator);
+        m_iterator = nullptr;
+    }
+
+    // read bam file record by record
+    while (readBam(alignment) > 0)
+        m_reads++;
+
+    if (alignment)
+        bam_destroy1(alignment);
+}
+
+
+int BamHandle::readsPerRegion(const std::string &qName, int qStart, int qEnd)
+{
+    bam1_t *alignment = bam_init1();
+    int reads = 0;
+    query(qName, qStart, qEnd);
+
+    // read alignments from iterator
+    while (readBam(alignment) > 0)
+        reads++;
+
+
+    if (alignment)
+        bam_destroy1(alignment);
+
+    return reads;
 }

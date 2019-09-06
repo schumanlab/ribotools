@@ -19,10 +19,16 @@ public:
     int readBam(bam1_t *b);
     void calculateFootprintCoverage(std::vector<int> &fc, const std::string &qName, int qStart, int qEnd);
     void calculateSiteCoverage(std::vector<int> &fc, const std::string &qName, int qStart, int qEnd, int qRef, bool useAsite);
+    void countUniqueReads();
+
+    int readsPerRegion(const std::string &qName, int qStart, int qEnd);
+
+    int reads() const {return m_reads;}
 
 private:
     int m_mapq;
     int m_length;
+    int m_reads;
     std::string m_file;
     htsFile *m_bam;
     hts_idx_t *m_bai;
