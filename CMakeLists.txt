@@ -23,6 +23,7 @@ set(SOURCE
     main_codonrate.cpp
     main_count.cpp
     main_features.cpp
+    main_gcratio.cpp
     main_irate.cpp
     main_length.cpp
     main_metagene.cpp

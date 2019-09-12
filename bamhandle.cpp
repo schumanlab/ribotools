@@ -179,3 +179,49 @@ int BamHandle::readsPerRegion(const std::string &qName, int qStart, int qEnd)
 
     return reads;
 }
+
+
+int BamHandle::calculateGCcontent(double &gc_mean, double &gc_std)
+{
+    bam1_t *alignment = bam_init1();
+
+    // check if iterator is set and reset
+    if (m_iterator) {
+        bam_itr_destroy(m_iterator);
+        m_iterator = nullptr;
+    }
+
+    // set defaults
+    gc_mean = 0.0;
+    gc_std = 0.0;
+    double gc_M2 = 0.0, gc_var = 0.0;
+    int readCount = 0;
+
+    // read alignments from iterator
+    while (readBam(alignment) > 0) {
+
+        int gc = 0;
+        int readLength = alignment->core.l_qseq;
+        uint8_t *sequence = bam_get_seq(alignment);
+
+        for (int b = 0; b < readLength; ++b) {
+            char base = "=ACMGRSVTWYHKDBN"[bam_seqi(sequence, b)];
+            if ((base == 'C') || (base == 'G'))
+                    gc++;
+        }
+
+        double gc_ratio = static_cast<double>(gc) / readLength;
+        double gc_delta = gc_ratio - gc_mean;
+        gc_mean += gc_delta / (readCount + 1);
+        gc_M2 += gc_delta * (gc_ratio - gc_mean);
+        gc_var = gc_M2 / (readCount + 1);
+        readCount++;
+    }
+
+    gc_std = std::sqrt(gc_var);
+
+    if (alignment)
+        bam_destroy1(alignment);
+
+    return readCount;
+}

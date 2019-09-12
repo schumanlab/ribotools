@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <cmath>
 
 #include <htslib/hts.h>
 #include <htslib/sam.h>
@@ -20,8 +21,8 @@ public:
     void calculateFootprintCoverage(std::vector<int> &fc, const std::string &qName, int qStart, int qEnd);
     void calculateSiteCoverage(std::vector<int> &fc, const std::string &qName, int qStart, int qEnd, int qRef, bool useAsite);
     void countUniqueReads();
-
     int readsPerRegion(const std::string &qName, int qStart, int qEnd);
+    int calculateGCcontent(double &gc_mean, double &gc_std);
 
     int reads() const {return m_reads;}
 
