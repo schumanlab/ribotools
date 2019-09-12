@@ -25,6 +25,7 @@ set(SOURCE
     main_count.cpp
     main_features.cpp
     main_gcratio.cpp
+    main_gcref.cpp
     main_irate.cpp
     main_length.cpp
     main_metagene.cpp

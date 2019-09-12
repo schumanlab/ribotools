@@ -10,7 +10,8 @@ int main_codonfreq(int argc, const char *argv[]);
 int main_codonrate(int argc, const char *argv[]);
 int main_count(int argc, const char *argv[]);
 int main_features(int argc, const char *argv[]);
-int main_gcration(int argc, const char *argv[]);
+int main_gcratio(int argc, const char *argv[]);
+int main_gcref(int argc, const char *argv[]);
 int main_irate(int argc, const char *argv[]);
 int main_length(int argc, const char *argv[]);
 int main_metagene(int argc, const char *argv[]);
@@ -44,7 +45,9 @@ int main(int argc, const char *argv[])
 
     else if (subcommand == "features") return main_features(argc - 1, argv + 1);
 
-    else if (subcommand == "gcratio") return main_gcration(argc - 1, argv + 1);
+    else if (subcommand == "gcratio") return main_gcratio(argc - 1, argv + 1);
+
+    else if (subcommand == "gcref") return main_gcref(argc - 1, argv + 1);
 
     else if (subcommand == "irate") return main_irate(argc - 1, argv + 1);
 
