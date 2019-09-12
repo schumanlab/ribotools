@@ -225,3 +225,43 @@ int BamHandle::calculateGCcontent(double &gc_mean, double &gc_std)
 
     return readCount;
 }
+
+
+void BamHandle::calculateBaseContent(int bufferLength, std::vector<int> &base_A, std::vector<int> &base_C, std::vector<int> &base_G, std::vector<int> &base_T, std::vector<int> &base_N)
+{
+    bam1_t *alignment = bam_init1();
+
+    // check if iterator is set and reset
+    if (m_iterator) {
+        bam_itr_destroy(m_iterator);
+        m_iterator = nullptr;
+    }
+
+
+    // read alignments from iterator
+    while (readBam(alignment) > 0) {
+
+        int readLength = alignment->core.l_qseq;
+        uint8_t *sequence = bam_get_seq(alignment);
+        int loopLength = std::min(bufferLength, readLength);
+
+        for (int b = 0; b < loopLength; ++b) {
+            char base = "=ACMGRSVTWYHKDBN"[bam_seqi(sequence, b)];
+            if (base == 'A')
+                base_A.at(b)++;
+            else if (base == 'C')
+                base_C.at(b)++;
+            else if (base == 'G')
+                base_G.at(b)++;
+            else if (base == 'T')
+                base_T.at(b)++;
+            else
+                base_N.at(b)++;
+        }
+
+
+    }
+
+    if (alignment)
+        bam_destroy1(alignment);
+}

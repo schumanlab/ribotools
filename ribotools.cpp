@@ -5,6 +5,7 @@
 int version();
 int usage();
 
+int main_basefreq(int argc, const char *argv[]);
 int main_codonfreq(int argc, const char *argv[]);
 int main_codonrate(int argc, const char *argv[]);
 int main_count(int argc, const char *argv[]);
@@ -31,6 +32,8 @@ int main(int argc, const char *argv[])
     if (subcommand == "-h" || subcommand == "--help") return usage();
     
     else if (subcommand == "-v" || subcommand == "--version") return version();
+
+    else if (subcommand == "basefreq") return main_basefreq(argc - 1, argv + 1);
 
     else if (subcommand == "codonfreq") return main_codonfreq(argc - 1, argv + 1);
 

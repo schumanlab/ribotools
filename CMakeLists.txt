@@ -19,6 +19,7 @@ set(SOURCE
     bamhandle.cpp bamhandle.h
     bedrecord.cpp bedrecord.h
     parserargv.cpp parserargv.h
+    main_basefreq.cpp
     main_codonfreq.cpp
     main_codonrate.cpp
     main_count.cpp

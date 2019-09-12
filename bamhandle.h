@@ -23,6 +23,7 @@ public:
     void countUniqueReads();
     int readsPerRegion(const std::string &qName, int qStart, int qEnd);
     int calculateGCcontent(double &gc_mean, double &gc_std);
+    void calculateBaseContent(int bufferLength, std::vector<int> &base_A, std::vector<int> &base_C, std::vector<int> &base_G, std::vector<int> &base_T, std::vector<int> &base_N);
 
     int reads() const {return m_reads;}
 
