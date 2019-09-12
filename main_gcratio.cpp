@@ -1,15 +1,23 @@
 #include <iostream>
+#include <fstream>
 #include <memory>
 
 #include "parserargv.h"
 #include "bamhandle.h"
+#include "bedrecord.h"
 
 int main_gcration(int argc, const char *argv[])
 {
+    std::string fileBed;
     std::vector<std::shared_ptr<BamHandle>> handlesBam;
 
     // parse command line parameters
     ParserArgv parser(argc, argv);
+
+    if (!(parser.find("--bed") && parser.next(fileBed))) {
+        std::cerr << "ribotools::translate::error, provide a BED file." << std::endl;
+        return 1;
+    }
 
     if (parser.find("--bam")) {
         std::string fileNameNext;
@@ -23,14 +31,50 @@ int main_gcration(int argc, const char *argv[])
         return 1;
     }
 
+    // open BED file
+    std::ifstream fhBed;
+    fhBed.open(fileBed);
+    if (!fhBed.is_open()) {
+        std::cerr << "ribotools::translate::error, failed to open BED reference " << fileBed << std::endl;
+        return 1;
+    }
+
+
+
+
     // calculate gc-content per BAM file
     std::cout << "# name\tread.count\tgc-ratio_mean\tgc-ratio_std" << std::endl;
     for (auto handle : handlesBam) {
         double gc_mean = 0.0;
-        double gc_std = 0.0;
-        int readCount = handle->calculateGCcontent(gc_mean, gc_std);
+        double gc_M2 = 0.0;
+        double gc_var = 0.0;
+        int readCount = 0;
+
+
+        // loop over bed file
+        std::string line;
+        while (std::getline(fhBed, line)) {
+
+            // parse bed line
+            auto bed = BedRecord();
+            std::istringstream iss(line);
+            iss >> bed;
+
+            handle->query(bed.transcript, bed.cdsStart, bed.cdsEnd);
+            handle->calculateGCperORF(gc_mean, gc_M2, gc_var, readCount);
+        }
+
+        double gc_std = std::sqrt(gc_var);
+
         std::cout << handle->name() << "\t" << readCount << "\t" << gc_mean << "\t" << gc_std << std::endl;
+
+        // rewind file
+        fhBed.clear();
+        fhBed.seekg(0);
     }
+
+    // close bed file
+    fhBed.close();
 
     return 0;
 }

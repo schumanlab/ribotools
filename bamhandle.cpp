@@ -227,6 +227,36 @@ int BamHandle::calculateGCcontent(double &gc_mean, double &gc_std)
 }
 
 
+void BamHandle::calculateGCperORF(double &gc_mean, double &gc_M2, double &gc_var, int &readCount)
+{
+    bam1_t *alignment = bam_init1();
+
+    // read alignments from iterator
+    while (readBam(alignment) > 0) {
+
+        int gc = 0;
+        int readLength = alignment->core.l_qseq;
+        uint8_t *sequence = bam_get_seq(alignment);
+
+        for (int b = 0; b < readLength; ++b) {
+            char base = "=ACMGRSVTWYHKDBN"[bam_seqi(sequence, b)];
+            if ((base == 'C') || (base == 'G'))
+                    gc++;
+        }
+
+        double gc_ratio = static_cast<double>(gc) / readLength;
+        double gc_delta = gc_ratio - gc_mean;
+        gc_mean += gc_delta / (readCount + 1);
+        gc_M2 += gc_delta * (gc_ratio - gc_mean);
+        gc_var = gc_M2 / (readCount + 1);
+        readCount++;
+    }
+
+    if (alignment)
+        bam_destroy1(alignment);
+}
+
+
 void BamHandle::calculateBaseContent(int bufferLength, std::vector<int> &base_A, std::vector<int> &base_C, std::vector<int> &base_G, std::vector<int> &base_T, std::vector<int> &base_N)
 {
     bam1_t *alignment = bam_init1();
