@@ -19,6 +19,7 @@ public:
     
     double timeDecoding(const std::string &codon) const;
     double timePausing(const std::string &codon) const;
+    char translate(const std::string &codon) const;
     
     void write();
     void log(const std::string &label);

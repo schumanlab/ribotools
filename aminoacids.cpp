@@ -193,6 +193,14 @@ double AminoAcids::timePausing(const std::string &codon) const
 }
 
 
+char AminoAcids::translate(const std::string &codon) const
+{
+    auto node = m_map.find(codon);
+    if (node == m_map.end()) return 'X';
+    return node->second.letter;
+}
+
+
 void AminoAcids::write()
 {
     std::cout << "#codon\tletter\tcode\tname\tcount\ttime.decoding\ttime.pausing" << std::endl;

@@ -17,6 +17,7 @@ int main_metagene(int argc, const char *argv[]);
 int main_mtdr(int argc, const char *argv[]);
 int main_pausing(int argc, const char *argv[]);
 int main_poffset(int argc, const char *argv[]);
+int main_translate(int argc, const char *argv[]);
 int main_uorfs(int argc, const char *argv[]);
 int main_utrseq(int argc, const char *argv[]);
 
@@ -56,6 +57,8 @@ int main(int argc, const char *argv[])
     else if (subcommand == "pausing") return main_pausing(argc - 1, argv + 1);
 
     else if (subcommand == "poffset") return main_poffset(argc - 1, argv + 1);
+
+    else if (subcommand == "translate") return main_translate(argc - 1, argv + 1);
 
     else if (subcommand == "uorfs") return main_uorfs(argc - 1, argv + 1);
 
