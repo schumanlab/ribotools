@@ -181,21 +181,9 @@ int BamHandle::readsPerRegion(const std::string &qName, int qStart, int qEnd)
 }
 
 
-int BamHandle::calculateGCcontent(double &gc_mean, double &gc_std)
+void BamHandle::calculateGCcontent(double &gc_mean, double &gc_M2, double &gc_var, int &readCount)
 {
     bam1_t *alignment = bam_init1();
-
-    // check if iterator is set and reset
-    if (m_iterator) {
-        bam_itr_destroy(m_iterator);
-        m_iterator = nullptr;
-    }
-
-    // set defaults
-    gc_mean = 0.0;
-    gc_std = 0.0;
-    double gc_M2 = 0.0, gc_var = 0.0;
-    int readCount = 0;
 
     // read alignments from iterator
     while (readBam(alignment) > 0) {
@@ -216,18 +204,15 @@ int BamHandle::calculateGCcontent(double &gc_mean, double &gc_std)
         gc_M2 += gc_delta * (gc_ratio - gc_mean);
         gc_var = gc_M2 / (readCount + 1);
         readCount++;
+        std::cout << readLength << "\t" << gc_ratio << std::endl;
     }
-
-    gc_std = std::sqrt(gc_var);
 
     if (alignment)
         bam_destroy1(alignment);
-
-    return readCount;
 }
 
 
-void BamHandle::calculateGCperORF(double &gc_mean, double &gc_M2, double &gc_var, int &readCount)
+void BamHandle::calculateGCbases(uint64_t &baseCount, uint64_t &gcCount)
 {
     bam1_t *alignment = bam_init1();
 
@@ -244,12 +229,9 @@ void BamHandle::calculateGCperORF(double &gc_mean, double &gc_M2, double &gc_var
                     gc++;
         }
 
-        double gc_ratio = static_cast<double>(gc) / readLength;
-        double gc_delta = gc_ratio - gc_mean;
-        gc_mean += gc_delta / (readCount + 1);
-        gc_M2 += gc_delta * (gc_ratio - gc_mean);
-        gc_var = gc_M2 / (readCount + 1);
-        readCount++;
+        baseCount += static_cast<uint64_t>(readLength);
+        gcCount += static_cast<uint64_t>(gc);
+
     }
 
     if (alignment)

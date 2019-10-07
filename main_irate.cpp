@@ -93,7 +93,7 @@ int main_irate(int argc, const char *argv[])
              (iteratorRFP != handlesRFP.end()) && (iteratorRNA != handlesRNA.end());
              ++iteratorRFP, ++iteratorRNA) {
 
-            std::vector<int> rfpc(bed.cdsSpan, 0);
+            std::vector<int> rfpc(static_cast<size_t>(bed.cdsSpan), 0);
             int reads_rna = (*iteratorRNA)->readsPerRegion(bed.transcript, 0, bed.span);
 
             (*iteratorRFP)->calculateSiteCoverage(rfpc, bed.transcript, bed.cdsStart, bed.cdsEnd, bed.cdsStart, true);

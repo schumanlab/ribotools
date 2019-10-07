@@ -5,20 +5,20 @@ if(APPLE)
     link_directories(/usr/local/lib)
 endif()
 
-set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall")
-set (CMAKE_CXX_STANDARD 14)
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -Wall")
+set (CMAKE_CXX_STANDARD 17)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++14 -W -Wall -pedantic")
+    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -std=c++17 -W -Wall -pedantic")
 endif()
 
 project(ribotools)
 set(SOURCE 
     ribotools.cpp
+    argumentparser.h
     aminoacids.cpp aminoacids.h
     bamhandle.cpp bamhandle.h
     bedrecord.cpp bedrecord.h
-    parserargv.cpp parserargv.h
     main_basefreq.cpp
     main_codonfreq.cpp
     main_codonrate.cpp
@@ -35,6 +35,7 @@ set(SOURCE
     main_translate.cpp
     main_uorfs.cpp
     main_utrseq.cpp
+    parserargv.cpp parserargv.h
     )
 add_executable(${PROJECT_NAME} ${SOURCE})
 

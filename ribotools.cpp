@@ -1,9 +1,7 @@
 #include <iostream>
+#include "argumentparser.h"
 
-#define VERSION 1.01
-
-int version();
-int usage();
+std::string description();
 
 int main_basefreq(int argc, const char *argv[]);
 int main_codonfreq(int argc, const char *argv[]);
@@ -24,10 +22,37 @@ int main_utrseq(int argc, const char *argv[]);
 
 int main(int argc, const char *argv[])
 {
-    // make sure sub command is present
-    if (argc < 2)
-        return usage();
+    auto p = ArgumentParser("ribotools", "0.0.1", description());
+    p.addArgumentCommand("basefreq").setHelp("calculates basefrequency");
+    p.addArgumentCommand("codonfreq").setHelp("calculates codon frequency");
+    p.addArgumentCommand("codonrate").setHelp("calculates codon decoding rate");
+    p.addArgumentCommand("count").setHelp("counts reads per CDS in BAM files");
+    p.addArgumentCommand("features").setHelp("counts reads per gene features in BAM files");
+    p.addArgumentCommand("gcratio").setHelp("calculate GC ratio in BAM reads");
+    p.addArgumentCommand("gcref").setHelp("calculates GC ratio per gene features");
+    p.addArgumentCommand("irate").setHelp("calculates initation rate based on RNASeq and RiboSeq");
+    p.addArgumentCommand("length").setHelp("calculate read length based on cigar string");
+    p.addArgumentCommand("metagene").setHelp("project footprints to a metagene histogram");
+    p.addArgumentCommand("mtdr").setHelp("calculates mean transcript decoding rate (MTDR)");
+    p.addArgumentCommand("pausing").setHelp("calculates z-score pausing score per codon");
+    p.addArgumentCommand("poffset").setHelp("calculates P-site offset per read length");
+    p.addArgumentCommand("translage").setHelp("translate transcripts based on BED and FASTA");
+    p.addArgumentCommand("uorfs").setHelp("screens for upstream open reading frames");
+    p.addArgumentCommand("utrseq").setHelp("exports UTR sequence from BED and FASTA");
+    p.addArgumentFlag("help message").setKeyShort("-h").setKeyLong("--help");
+    p.addArgumentFlag("version").setKeyShort("-v").setKeyLong("--version");
 
+    try {
+        p.parse(argc, argv);
+    }
+    catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        return 1;
+    }
+
+
+
+    /*
     // parse on subcommand
     const std::string subcommand = std::string(argv[1]);
 
@@ -71,25 +96,18 @@ int main(int argc, const char *argv[])
         std::cerr << "Error, unknown subcommand " << subcommand << std::endl;
         return usage();
     }
+    */
     
 }
 
 
-
-
-int version()
-{
-    std::cout << "Ribotools " << VERSION << std::endl;
-    std::cout << "  Scientific Computing Facility" << std::endl;
-    std::cout << "  Max-Planck Institute For Brain Research" << std::endl;
-    std::cout << "  https://gitlab.mpcdf.mpg.de/mpibr/schu/ribotools" << std::endl;
-    std::cout << "  bug reports: sciclist@brain.mpg.de" << std::endl;
-    return 0;
-}
-
-
-int usage()
-{
-    std::cout << "Ribotools help" << std::endl;
-    return 0;
+std::string description() {
+    std::stringstream oss;
+    oss << "assembly of tools to profile and analyse" << std::endl;
+    oss << "ribosome footprint sequencing" << std::endl;
+    oss << "  Scientific Computing Facility" << std::endl;
+    oss << "  Max-Planck Institute For Brain Research" << std::endl;
+    oss << "  https://gitlab.mpcdf.mpg.de/mpibr/schu/ribotools" << std::endl;
+    oss << "  bug reports: sciclist@brain.mpg.de" << std::endl;
+    return oss.str();
 }

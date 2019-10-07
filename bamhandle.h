@@ -22,9 +22,10 @@ public:
     void calculateSiteCoverage(std::vector<int> &fc, const std::string &qName, int qStart, int qEnd, int qRef, bool useAsite);
     void countUniqueReads();
     int readsPerRegion(const std::string &qName, int qStart, int qEnd);
-    int calculateGCcontent(double &gc_mean, double &gc_std);
-    void calculateGCperORF(double &gc_mean, double &gc_M2, double &gc_var, int &readCount);
+    void calculateGCcontent(double &gc_mean, double &gc_M2, double &gc_var, int &readCount);
     void calculateBaseContent(int bufferLength, std::vector<int> &base_A, std::vector<int> &base_C, std::vector<int> &base_G, std::vector<int> &base_T, std::vector<int> &base_N);
+
+    void calculateGCbases(uint64_t &baseCount, uint64_t &gcCount);
 
     int reads() const {return m_reads;}
 
