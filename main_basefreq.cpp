@@ -4,7 +4,7 @@
 #include "parserargv.h"
 #include "bamhandle.h"
 
-int main_basefreq(int argc, const char *argv[])
+int main_basefreq(const int argc, const char *argv[])
 {
     std::vector<std::shared_ptr<BamHandle>> handlesBam;
 

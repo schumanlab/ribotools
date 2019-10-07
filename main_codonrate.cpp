@@ -18,7 +18,7 @@ struct AminoAcid {
 
 void readCodonWeights(std::unordered_map<std::string, double> &codonWeights, const std::string &fileName);
 
-int main_codonrate(int argc, const char *argv[])
+int main_codonrate(const int argc, const char *argv[])
 {
     std::string fileBed;
     std::string fileFasta;

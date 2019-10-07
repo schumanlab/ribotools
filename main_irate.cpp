@@ -6,7 +6,7 @@
 #include "bedrecord.h"
 #include "bamhandle.h"
 
-int main_irate(int argc, const char *argv[])
+int main_irate(const int argc, const char *argv[])
 {
     std::string fileBed;
     std::vector<BamHandle*> handlesRFP; // ribosome footprints

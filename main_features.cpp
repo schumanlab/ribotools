@@ -9,7 +9,7 @@
 
 double getGCcontent(char *sequence, int start, int end);
 
-int main_features(int argc, const char *argv[])
+int main_features(const int argc, const char *argv[])
 {
     std::string fileBed;
     std::string fileFasta;

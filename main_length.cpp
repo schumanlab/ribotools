@@ -5,7 +5,7 @@
 #include "parserargv.h"
 #include "bamhandle.h"
 
-int main_length(int argc, const char *argv[])
+int main_length(const int argc, const char *argv[])
 {
     std::vector<BamHandle*> handlesBam;
 

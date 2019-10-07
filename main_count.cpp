@@ -5,7 +5,7 @@
 #include "bamhandle.h"
 #include "bedrecord.h"
 
-int main_count(int argc, const char *argv[])
+int main_count(const int argc, const char *argv[])
 {
     std::string fileBed;
     std::vector<BamHandle *> handlesBam;

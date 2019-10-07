@@ -13,7 +13,7 @@ bool uORFs_checkStop(const std::string &codonSeq);
 
 int countReadsOverRegion(const std::string &chrom, int chromStart, int chromEnd, bam_hdr_t *hdrBam, hts_idx_t *fhBai, htsFile *fhBam);
 
-int main_uorfs(int argc, const char *argv[])
+int main_uorfs(const int argc, const char *argv[])
 {
     std::string fileBed;
     std::string fileFasta;

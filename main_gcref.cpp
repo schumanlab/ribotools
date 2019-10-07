@@ -6,7 +6,7 @@
 #include "parserargv.h"
 #include "bedrecord.h"
 
-int main_gcref(int argc, const char *argv[])
+int main_gcref(const int argc, const char *argv[])
 {
     std::string fileBed;
     std::string fileFasta;

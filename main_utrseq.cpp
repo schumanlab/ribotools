@@ -8,7 +8,7 @@
 
 void exportSequence(const char *sequence, const char *name, int start, int end);
 
-int main_utrseq (int argc, const char *argv[])
+int main_utrseq (const int argc, const char *argv[])
 {
     std::string fileBed;
     std::string fileFasta;

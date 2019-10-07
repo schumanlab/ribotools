@@ -7,7 +7,7 @@
 #include "bedrecord.h"
 #include "aminoacids.h"
 
-int main_translate(int argc, const char *argv[])
+int main_translate(const int argc, const char *argv[])
 {
     std::string fileBed;
     std::string fileFasta;

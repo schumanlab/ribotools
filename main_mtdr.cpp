@@ -16,7 +16,7 @@ void readCodonParameters(AminoAcids &aainfo, const std::string &fileName);
 void normalizedFootprintCoveragePerCodon(const std::vector<int> &fc, double afc, const char *sequence, int qStart, int qEnd);
 void calculateMTDR(const std::string &name, const AminoAcids &aainfo, const std::vector<int> &fc, double afc, const char *sequence, int qStart, int qEnd);
 
-int main_mtdr(int argc, const char *argv[])
+int main_mtdr(const int argc, const char *argv[])
 {
     bool calculateNFC = true;
     std::string fileBed;

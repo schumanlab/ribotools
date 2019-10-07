@@ -18,7 +18,7 @@ struct AminoAcid {
 void readCodonTable(std::unordered_map<std::string, AminoAcid> &codonMap, const std::string &fileName);
 void printCodonTable(std::unordered_map<std::string, AminoAcid> &codonMap, int totalCodons);
 
-int main_codonfreq(int argc, const char *argv[])
+int main_codonfreq(const int argc, const char *argv[])
 {
     std::string fileBed;
     std::string fileFasta;

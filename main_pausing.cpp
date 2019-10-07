@@ -11,7 +11,7 @@
 #include "aminoacids.h"
 
 
-int main_pausing(int argc, const char *argv[])
+int main_pausing(const int argc, const char *argv[])
 {
     std::string fileBed;
     std::string fileFasta;

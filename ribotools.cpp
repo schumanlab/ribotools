@@ -3,22 +3,22 @@
 
 std::string description();
 
-int main_basefreq(int argc, const char *argv[]);
-int main_codonfreq(int argc, const char *argv[]);
-int main_codonrate(int argc, const char *argv[]);
-int main_count(int argc, const char *argv[]);
-int main_features(int argc, const char *argv[]);
-int main_gcratio(int argc, const char *argv[]);
-int main_gcref(int argc, const char *argv[]);
-int main_irate(int argc, const char *argv[]);
-int main_length(int argc, const char *argv[]);
-int main_metagene(int argc, const char *argv[]);
-int main_mtdr(int argc, const char *argv[]);
-int main_pausing(int argc, const char *argv[]);
-int main_poffset(int argc, const char *argv[]);
-int main_translate(int argc, const char *argv[]);
-int main_uorfs(int argc, const char *argv[]);
-int main_utrseq(int argc, const char *argv[]);
+int main_basefreq(const int argc, const char *argv[]);
+int main_codonfreq(const int argc, const char *argv[]);
+int main_codonrate(const int argc, const char *argv[]);
+int main_count(const int argc, const char *argv[]);
+int main_features(const int argc, const char *argv[]);
+int main_gcratio(const int argc, const char *argv[]);
+int main_gcref(const int argc, const char *argv[]);
+int main_irate(const int argc, const char *argv[]);
+int main_length(const int argc, const char *argv[]);
+int main_metagene(const int argc, const char *argv[]);
+int main_mtdr(const int argc, const char *argv[]);
+int main_pausing(const int argc, const char *argv[]);
+int main_poffset(const int argc, const char *argv[]);
+int main_translate(const int argc, const char *argv[]);
+int main_uorfs(const int argc, const char *argv[]);
+int main_utrseq(const int argc, const char *argv[]);
 
 int main(int argc, const char *argv[])
 {
@@ -44,60 +44,45 @@ int main(int argc, const char *argv[])
 
     try {
         p.parse(argc, argv);
+
+        if (p.get<bool>("basefreq")) return main_basefreq(argc - 1, argv + 1);
+
+        if (p.get<bool>("codonfreq")) return main_codonfreq(argc - 1, argv + 1);
+
+        if (p.get<bool>("codonrate")) return main_codonrate(argc - 1, argv + 1);
+
+        if (p.get<bool>("count")) return main_count(argc - 1, argv + 1);
+
+        if (p.get<bool>("features")) return main_features(argc - 1, argv + 1);
+
+        if (p.get<bool>("gcratio")) return main_gcratio(argc - 1, argv + 1);
+
+        if (p.get<bool>("gcref")) return main_gcref(argc - 1, argv + 1);
+
+        if (p.get<bool>("irate")) return main_irate(argc - 1, argv + 1);
+
+        if (p.get<bool>("length")) return main_length(argc - 1, argv + 1);
+
+        if (p.get<bool>("metagene")) return main_metagene(argc - 1, argv + 1);
+
+        if (p.get<bool>("mtdr")) return main_mtdr(argc - 1, argv + 1);
+
+        if (p.get<bool>("pausing")) return main_pausing(argc - 1, argv + 1);
+
+        if (p.get<bool>("poffset")) return main_poffset(argc - 1, argv + 1);
+
+        if (p.get<bool>("translate")) return main_translate(argc - 1, argv + 1);
+
+        if (p.get<bool>("uorfs")) return main_uorfs(argc - 1, argv + 1);
+
+        if (p.get<bool>("utrseq")) return main_utrseq(argc - 1, argv + 1);
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
         return 1;
     }
 
-
-
-    /*
-    // parse on subcommand
-    const std::string subcommand = std::string(argv[1]);
-
-    if (subcommand == "-h" || subcommand == "--help") return usage();
-    
-    else if (subcommand == "-v" || subcommand == "--version") return version();
-
-    else if (subcommand == "basefreq") return main_basefreq(argc - 1, argv + 1);
-
-    else if (subcommand == "codonfreq") return main_codonfreq(argc - 1, argv + 1);
-
-    else if (subcommand == "codonrate") return main_codonrate(argc - 1, argv + 1);
-
-    else if (subcommand == "count") return main_count(argc - 1, argv + 1);
-
-    else if (subcommand == "features") return main_features(argc - 1, argv + 1);
-
-    else if (subcommand == "gcratio") return main_gcratio(argc - 1, argv + 1);
-
-    else if (subcommand == "gcref") return main_gcref(argc - 1, argv + 1);
-
-    else if (subcommand == "irate") return main_irate(argc - 1, argv + 1);
-
-    else if (subcommand == "length") return main_length(argc - 1, argv + 1);
-    
-    else if (subcommand == "metagene") return main_metagene(argc - 1, argv + 1);
-
-    else if (subcommand == "mtdr") return main_mtdr(argc - 1, argv + 1);
-
-    else if (subcommand == "pausing") return main_pausing(argc - 1, argv + 1);
-
-    else if (subcommand == "poffset") return main_poffset(argc - 1, argv + 1);
-
-    else if (subcommand == "translate") return main_translate(argc - 1, argv + 1);
-
-    else if (subcommand == "uorfs") return main_uorfs(argc - 1, argv + 1);
-
-    else if (subcommand == "utrseq") return main_utrseq(argc - 1, argv + 1);
-
-    else {
-        std::cerr << "Error, unknown subcommand " << subcommand << std::endl;
-        return usage();
-    }
-    */
-    
+    return 0;
 }
 
 

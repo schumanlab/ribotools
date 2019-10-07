@@ -10,7 +10,7 @@
 #include "bamhandle.h"
 #include "bedrecord.h"
 
-int main_metagene(int argc, const char *argv[])
+int main_metagene(const int argc, const char *argv[])
 {
     std::string fileBed;
     std::vector <BamHandle*> handlesBam;

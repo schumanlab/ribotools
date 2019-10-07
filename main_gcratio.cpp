@@ -6,7 +6,7 @@
 #include "bamhandle.h"
 #include "bedrecord.h"
 
-int main_gcratio(int argc, const char *argv[])
+int main_gcratio(const int argc, const char *argv[])
 {
     std::string fileBed;
     std::vector<std::shared_ptr<BamHandle>> handlesBam;

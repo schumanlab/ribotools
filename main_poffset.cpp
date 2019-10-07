@@ -33,7 +33,7 @@ struct PSiteHasher {
 
 
 
-int main_poffset(int argc, const char *argv[])
+int main_poffset(const int argc, const char *argv[])
 {
     std::string fileBed;
     std::vector<BamHandle *> handlesBam;
