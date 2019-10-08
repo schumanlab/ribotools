@@ -330,6 +330,7 @@ public:
         // build arguments map
         buildArgumentsMap(m_args_command);
         buildArgumentsMap(m_args_keyvalue);
+        buildArgumentsMap(m_args_positional);
 
         // assign name
         if (name().empty())
@@ -659,6 +660,7 @@ private:
             k = 2;
 
         std::vector<std::shared_ptr<Argument>>::iterator it = m_args_positional.begin();
+        int counter_positional = 0;
         while (k < argc) {
 
             // current option
@@ -706,7 +708,11 @@ private:
             // assign positional argument
             if (it != m_args_positional.end()) {
                 (*it)->setValue(opt).setUsed(true);
-                ++it;
+                counter_positional++;
+                if (counter_positional == (*it)->count()) {
+                    ++it;
+                    counter_positional = 0;
+                }
                 continue;
             }
 

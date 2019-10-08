@@ -24,23 +24,23 @@ int main_pausing(const int argc, const char *argv[])
     int skipCodons;
 
     auto p = ArgumentParser("pausing", std::string(VERSION), "calculates z-score pausing score per codon");
-    p.addArgumentRequired("annotation file").setKeyShort("-a").setKeyLong("--bed").setHelp("BED file containing transcript annotation");
-    p.addArgumentRequired("sequence file").setKeyShort("-f").setKeyLong("--fasta").setHelp("FASTA file containing transcript sequence");
+    p.addArgumentRequired("annotation").setKeyShort("-a").setKeyLong("--bed").setHelp("BED file containing transcript annotation");
+    p.addArgumentRequired("sequence").setKeyShort("-f").setKeyLong("--fasta").setHelp("FASTA file containing transcript sequence");
     p.addArgumentOptional("basic").setKeyShort("-b").setKeyLong("--basic").setDefaultValue<int>(150).setHelp("number of codons to calculate background score");
     p.addArgumentOptional("flank").setKeyShort("-f").setKeyLong("--flank").setDefaultValue<int>(5).setHelp("number of flanking codons to calculate background score");
     p.addArgumentOptional("skip").setKeyShort("-s").setKeyLong("--skip").setDefaultValue<int>(10).setHelp("number of codons to skip after/before start/stop codon");
-    p.addArgumentPositional("alignment file").setCount(-1).setHelp("list of RiboSeq BAM files");
+    p.addArgumentPositional("alignment").setCount(-1).setHelp("list of RiboSeq BAM files");
     p.addArgumentFlag("help").setKeyShort("-h").setKeyLong("--help").setHelp("prints help message");
     p.addArgumentFlag("version").setKeyShort("-v").setKeyLong("--version").setHelp("prints major.minor.build version");
 
     try {
         p.parse(argc, argv);
-        fileBed = p.get<std::string>("annotation file");
-        fileFasta = p.get<std::string>("sequence file");
-        filesBam = p.get<std::vector<std::string>>("alignment file");
-        backgroundWindow_basic = p.get<int>("BackgroundWindowBasic");
-        backgroundWindow_flank = p.get<int>("BackgroundWindowFlank");
-        skipCodons = p.get<int>("SkipCodons");
+        fileBed = p.get<std::string>("annotation");
+        fileFasta = p.get<std::string>("sequence");
+        backgroundWindow_basic = p.get<int>("basic");
+        backgroundWindow_flank = p.get<int>("flank");
+        skipCodons = p.get<int>("skip");
+        filesBam = p.get<std::vector<std::string>>("alignment");
     }
     catch (const std::exception& e) {
         std::cerr << e.what() << std::endl;
