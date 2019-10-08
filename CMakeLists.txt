@@ -19,6 +19,7 @@ set(SOURCE
     aminoacids.cpp aminoacids.h
     bamhandle.cpp bamhandle.h
     bedrecord.cpp bedrecord.h
+    version.cpp version.h
     main_basefreq.cpp
     main_codonfreq.cpp
     main_codonrate.cpp

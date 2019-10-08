@@ -1,38 +1,62 @@
 #include <iostream>
+#include <memory>
 #include <fstream>
 #include <numeric>
 #include <cmath>
 
 #include <htslib/faidx.h>
 
-#include "parserargv.h"
+#include "argumentparser.h"
 #include "bamhandle.h"
 #include "bedrecord.h"
 #include "aminoacids.h"
+#include "version.h"
 
 
 int main_pausing(const int argc, const char *argv[])
 {
     std::string fileBed;
     std::string fileFasta;
-    std::vector <BamHandle*> handlesBam;
+    std::vector<std::string> filesBam;
+    std::vector<std::shared_ptr<BamHandle>> handlesBam;
+    int backgroundWindow_basic;
+    int backgroundWindow_flank;
+    int skipCodons;
 
-    const int backgroundWindow_basic = 150;
-    const int backgroundWindow_flank = 5;
-    const int skipCodons = 10;
+    auto p = ArgumentParser("pausing", std::string(VERSION), "calculates z-score pausing score per codon");
+    p.addArgumentRequired("annotation file").setKeyShort("-a").setKeyLong("--bed").setHelp("BED file containing transcript annotation");
+    p.addArgumentRequired("sequence file").setKeyShort("-f").setKeyLong("--fasta").setHelp("FASTA file containing transcript sequence");
+    p.addArgumentOptional("basic").setKeyShort("-b").setKeyLong("--basic").setDefaultValue<int>(150).setHelp("number of codons to calculate background score");
+    p.addArgumentOptional("flank").setKeyShort("-f").setKeyLong("--flank").setDefaultValue<int>(5).setHelp("number of flanking codons to calculate background score");
+    p.addArgumentOptional("skip").setKeyShort("-s").setKeyLong("--skip").setDefaultValue<int>(10).setHelp("number of codons to skip after/before start/stop codon");
+    p.addArgumentPositional("alignment file").setCount(-1).setHelp("list of RiboSeq BAM files");
+    p.addArgumentFlag("help").setKeyShort("-h").setKeyLong("--help").setHelp("prints help message");
+    p.addArgumentFlag("version").setKeyShort("-v").setKeyLong("--version").setHelp("prints major.minor.build version");
 
-    // parse command line parameters
-    ParserArgv parser(argc, argv);
-
-    if (!(parser.find("--bed") && parser.next(fileBed))) {
-        std::cerr << "ribotools::pausing::error, provide BED file." << std::endl;
+    try {
+        p.parse(argc, argv);
+        fileBed = p.get<std::string>("annotation file");
+        fileFasta = p.get<std::string>("sequence file");
+        filesBam = p.get<std::vector<std::string>>("alignment file");
+        backgroundWindow_basic = p.get<int>("BackgroundWindowBasic");
+        backgroundWindow_flank = p.get<int>("BackgroundWindowFlank");
+        skipCodons = p.get<int>("SkipCodons");
+    }
+    catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
         return 1;
     }
 
-    if (!(parser.find("--fasta") && parser.next(fileFasta))) {
-        std::cerr << "ribotools::pausing::error, provide FASTA file." << std::endl;
-        return 1;
-    }
+    std::cout << "BED: " << fileBed << std::endl;
+    std::cout << "FASTA: " << fileFasta << std::endl;
+    std::cout << "BASIC: " << backgroundWindow_basic << std::endl;
+    std::cout << "FLANK: " << backgroundWindow_flank << std::endl;
+    std::cout << "SKIP: " << skipCodons << std::endl;
+    std::cout << "BAMS: " << filesBam.size() << std::endl;
+
+
+    return 0;
+    /*
 
     if (parser.find("--bam")) {
         std::string fileNameNext;
@@ -167,4 +191,5 @@ int main_pausing(const int argc, const char *argv[])
 
 
     return 0;
+    */
 }
