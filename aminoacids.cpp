@@ -177,6 +177,15 @@ void AminoAcids::addTime(const std::string &codon, double timePausing, double ti
 }
 
 
+void AminoAcids::addPausingScore(const std::string &codon, double zscore)
+{
+    auto node = m_map.find(codon);
+    if (node == m_map.end()) return;
+    node->second.count++;
+    node->second.timePausing = std::max(zscore, node->second.timePausing);
+    node->second.timeDecoding = std::min(zscore, node->second.timeDecoding);
+}
+
 double AminoAcids::timeDecoding(const std::string &codon) const
 {
     auto node = m_map.find(codon);

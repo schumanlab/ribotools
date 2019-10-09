@@ -16,6 +16,7 @@ public:
     void setTimeDecoding(const std::string &codon, double timeValue);
     void setTimePausing(const std::string &codon, double timeValue);
     void addTime(const std::string &codon, double timePausing, double timeDecoding);
+    void addPausingScore(const std::string &codon, double zscore);
     
     double timeDecoding(const std::string &codon) const;
     double timePausing(const std::string &codon) const;
