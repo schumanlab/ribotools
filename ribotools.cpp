@@ -2,6 +2,7 @@
 #include "version.h"
 
 int main_basefreq(const int argc, const char *argv[]);
+int main_cai(const int argc, const char *argv[]);
 int main_codonfreq(const int argc, const char *argv[]);
 int main_codonrate(const int argc, const char *argv[]);
 int main_count(const int argc, const char *argv[]);
@@ -14,6 +15,7 @@ int main_metagene(const int argc, const char *argv[]);
 int main_mtdr(const int argc, const char *argv[]);
 int main_pausing(const int argc, const char *argv[]);
 int main_poffset(const int argc, const char *argv[]);
+int main_structure(const int argc, const char *argv[]);
 int main_translate(const int argc, const char *argv[]);
 int main_uorfs(const int argc, const char *argv[]);
 int main_utrseq(const int argc, const char *argv[]);
@@ -39,6 +41,8 @@ int main(const int argc, const char *argv[]) {
 
         else if (subcommand == "basefreq") return main_basefreq(argc - 1, argv + 1);
 
+        else if (subcommand == "cai") return main_cai(argc - 1, argv + 1);
+
         else if (subcommand == "codonfreq") return main_codonfreq(argc - 1, argv + 1);
 
         else if (subcommand == "codonrate") return main_codonrate(argc - 1, argv + 1);
@@ -62,6 +66,8 @@ int main(const int argc, const char *argv[]) {
         else if (subcommand == "pausing") return main_pausing(argc - 1, argv + 1);
 
         else if (subcommand == "poffset") return main_poffset(argc - 1, argv + 1);
+
+        else if (subcommand == "structure") return main_structure(argc - 1, argv + 1);
 
         else if (subcommand == "translate") return main_translate(argc - 1, argv + 1);
 
@@ -105,6 +111,7 @@ int printUsage()
     std::cerr << std::endl;
     std::cerr << "[subcommands]" << std::endl;
     std::cerr << "    basefreq       calculates base frequency per ORF" << std::endl;
+    std::cerr << "    cai            calculates codon adaptation index (CAI)" << std::endl;
     std::cerr << "    codonfreq      calculates codon frequency per ORF" << std::endl;
     std::cerr << "    codonrate      calculates codon decoding rate" << std::endl;
     std::cerr << "    count          counts reads per ORF from BAM files" << std::endl;
@@ -117,6 +124,7 @@ int printUsage()
     std::cerr << "    mtdr           calculates mean transcript decoding rate (MTDR)" << std::endl;
     std::cerr << "    pausing        calculates z-score pausing score per codon" << std::endl;
     std::cerr << "    poffset        calculates P-site offset per read length" << std::endl;
+    std::cerr << "    structure      calculates A-site coverage over protein secondary structure provided by FASTA file" << std::endl;
     std::cerr << "    translate      translates transcripts based on BED and FASTA files" << std::endl;
     std::cerr << "    uorfs          screens for upstream open reading frame" << std::endl;
     std::cerr << "    utrseq         exports UTR sequence from BED and FASTA files" << std::endl;

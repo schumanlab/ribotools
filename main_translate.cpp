@@ -5,7 +5,7 @@
 
 #include "parserargv.h"
 #include "bedrecord.h"
-#include "aminoacids.h"
+#include "aminoacidtable.h"
 
 int main_translate(const int argc, const char *argv[])
 {
@@ -41,7 +41,7 @@ int main_translate(const int argc, const char *argv[])
     }
 
     // loop over BED record
-    AminoAcids aainfo;
+    AminoAcidTable aainfo;
     std::string line;
     while (std::getline(fhBed, line)) {
 

@@ -16,11 +16,12 @@ project(ribotools)
 set(SOURCE 
     ribotools.cpp
     argumentparser.h
-    aminoacids.cpp aminoacids.h
+    aminoacidtable.cpp aminoacidtable.h
     bamhandle.cpp bamhandle.h
     bedrecord.cpp bedrecord.h
     version.cpp version.h
     main_basefreq.cpp
+    main_cai.cpp
     main_codonfreq.cpp
     main_codonrate.cpp
     main_count.cpp
@@ -33,6 +34,7 @@ set(SOURCE
     main_mtdr.cpp
     main_pausing.cpp
     main_poffset.cpp
+    main_structure.cpp
     main_translate.cpp
     main_uorfs.cpp
     main_utrseq.cpp

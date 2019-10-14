@@ -9,7 +9,7 @@
 #include "argumentparser.h"
 #include "bamhandle.h"
 #include "bedrecord.h"
-#include "aminoacids.h"
+#include "aminoacidtable.h"
 #include "version.h"
 
 
@@ -104,7 +104,7 @@ int main_pausing(const int argc, const char *argv[])
 
         // retrieve sequence
         char *sequence = faidx_fetch_seq(fhFai, bed.name.c_str(), 0, bed.span, &bed.span);
-        auto aa = AminoAcids();
+        auto aa = AminoAcidTable();
 
         // count paused codons
         std::vector<int>::const_iterator it;

@@ -10,11 +10,11 @@
 #include "parserargv.h"
 #include "bedrecord.h"
 #include "bamhandle.h"
-#include "aminoacids.h"
+#include "aminoacidtable.h"
 
-void readCodonParameters(AminoAcids &aainfo, const std::string &fileName);
+void readCodonParameters(AminoAcidTable &aainfo, const std::string &fileName);
 void normalizedFootprintCoveragePerCodon(const std::vector<int> &fc, double afc, const char *sequence, int qStart, int qEnd);
-void calculateMTDR(const std::string &name, const AminoAcids &aainfo, const std::vector<int> &fc, double afc, const char *sequence, int qStart, int qEnd);
+void calculateMTDR(const std::string &name, const AminoAcidTable &aainfo, const std::vector<int> &fc, double afc, const char *sequence, int qStart, int qEnd);
 
 int main_mtdr(const int argc, const char *argv[])
 {
@@ -23,7 +23,7 @@ int main_mtdr(const int argc, const char *argv[])
     std::string fileFasta;
     std::string fileParams;
     std::vector<BamHandle*> handlesBam;
-    AminoAcids aainfo;
+    AminoAcidTable aainfo;
     
     
     // parse command line parameters
@@ -147,7 +147,7 @@ void normalizedFootprintCoveragePerCodon(const std::vector<int> &fc, double afc,
 
 
 
-void calculateMTDR(const std::string &name, const AminoAcids &aainfo, const std::vector<int> &fc, double afc, const char *sequence, int qStart, int qEnd)
+void calculateMTDR(const std::string &name, const AminoAcidTable &aainfo, const std::vector<int> &fc, double afc, const char *sequence, int qStart, int qEnd)
 {
     int counter = 0;
     int fast = 0;
@@ -166,7 +166,7 @@ void calculateMTDR(const std::string &name, const AminoAcids &aainfo, const std:
         if (codon.length() != 3) continue;
         if (std::strchr(codonSeq, 'N')) continue;
 
-        double timeValue = aainfo.timeDecoding(codon);
+        double timeValue = aainfo.value(codon);
         fast++;
 
         /*
@@ -190,7 +190,7 @@ void calculateMTDR(const std::string &name, const AminoAcids &aainfo, const std:
 
 
 
-void readCodonParameters(AminoAcids &aainfo, const std::string &fileName)
+void readCodonParameters(AminoAcidTable &aainfo, const std::string &fileName)
 {
     std::ifstream fhs;
     fhs.open(fileName);
@@ -212,9 +212,9 @@ void readCodonParameters(AminoAcids &aainfo, const std::string &fileName)
         double timePausing;
 
         iss >> codon >> letter >> code >> name >> count >> timeDecoding >> timePausing;
-        aainfo.add(codon, count);
-        aainfo.setTimeDecoding(codon, timeDecoding);
-        aainfo.setTimePausing(codon, timePausing);
+        aainfo.addParameters(codon, count);
+        aainfo.setValue(codon, timeDecoding);
+        aainfo.setScore(codon, timePausing);
     }
 
     fhs.close();
