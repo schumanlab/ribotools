@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <map>
+#include <unordered_map>
 #include <cmath>
 #include <memory>
 
@@ -57,14 +58,11 @@ public:
     void write();
     void log(const std::string &label);
 
-    void test();
-
     void calculateRSCU();
 
 private:
 
     std::map<std::string, std::shared_ptr<AminoAcid>> m_table;
-    std::multimap<char, std::shared_ptr<AminoAcid>> m_synonyms;
 };
 
 #endif

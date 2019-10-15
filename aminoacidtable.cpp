@@ -66,13 +66,6 @@ AminoAcidTable::AminoAcidTable()
     m_table["TGG"] = std::make_shared<AminoAcid>('W', "TGG", "Trp", "Tryptophan");
     m_table["TAC"] = std::make_shared<AminoAcid>('Y', "TAC", "Tyr", "Tyrosine");
     m_table["TAT"] = std::make_shared<AminoAcid>('Y', "TAT", "Tyr", "Tyrosine");
-
-
-    // fill synonyms table
-    for (auto aa : m_table) {
-        char letter = aa.second->letter;
-        m_synonyms.insert(std::pair<char, std::shared_ptr<AminoAcid>>(letter, aa.second));
-    }
 }
 
 
@@ -188,50 +181,44 @@ void AminoAcidTable::log(const std::string &label)
 }
 
 
-void AminoAcidTable::test()
-{
-    char temp = 'X';
-    for(std::multimap<char,std::shared_ptr<AminoAcid>>::iterator it = m_synonyms.begin();
-        it != m_synonyms.end(); ++it)
-          if (temp != it->first) {
-              std::cout << std::endl;
-              std::cout << it->first << " " << it->second->codon;
-              temp = it->first;
-          }
-          else {
-              std::cout << " " << it->second->codon;
-          }
-
-
-}
-
-
 void AminoAcidTable::calculateRSCU()
 {
-    // total codons
-    int totalCodons = 0;
-    for (auto aa : m_table)
-        totalCodons = aa.second->count;
+    std::multimap<char, std::shared_ptr<AminoAcid>> table_synonyms;
+    std::unordered_map<char, double> table_maxscore;
+
+    // fill synonyms table
+    double weight_total = 0.0;
+    for (auto aa : m_table) {
+        char letter = aa.second->letter;
+        table_synonyms.insert(std::pair<char, std::shared_ptr<AminoAcid>>(letter, aa.second));
+        weight_total += aa.second->value;
+    }
 
     // relative frequency
     for (auto aa : m_table)
-        aa.second->value = static_cast<double>(aa.second->count) / totalCodons;
+        aa.second->value = static_cast<double>(aa.second->value) / weight_total;
 
-    // maximum score per synonym
-    char temp = 'X';
-    for(std::multimap<char, std::shared_ptr<AminoAcid>>::iterator it = m_synonyms.begin();
-        it != m_synonyms.end(); ++it) {
+    // find maximum value per synonym
+    std::multimap<char, std::shared_ptr<AminoAcid>>::iterator it_synonym;
+    std::unordered_map<char, double>::iterator it_maxscore;
 
-        if (temp != it->first) {
-            temp = it->first;
-            it->second->score = it->second->value;
+    for(it_synonym = table_synonyms.begin(); it_synonym != table_synonyms.end(); ++it_synonym) {
+
+        it_maxscore = table_maxscore.find(it_synonym->first);
+        if (it_maxscore == table_maxscore.end()) {
+            table_maxscore[it_synonym->first] = it_synonym->second->value;
         }
         else {
-            it->second->score = std::max(it->second->score, it->second->value);
+            table_maxscore[it_synonym->first] = std::max(it_synonym->second->value, it_maxscore->second);
         }
 
     }
 
-
+    // calculate score based on max table
+    for (auto aa : m_table) {
+        it_maxscore = table_maxscore.find(aa.second->letter);
+        if (it_maxscore == table_maxscore.end()) continue;
+        aa.second->score = aa.second->value / it_maxscore->second;
+    }
 
 }
