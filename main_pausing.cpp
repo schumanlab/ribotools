@@ -93,7 +93,7 @@ int main_pausing(const int argc, const char *argv[])
 
         // fiter based on coverage and empty codons
         double background_average = static_cast<double>(std::accumulate(codons.begin(), codons.end(), 0)) / lengthCodons;
-        if (background_average < 1.0) continue;
+        if (background_average < 0.1) continue;
 
         // calculate basic background
         int backgroundWindow_offset = std::min(backgroundWindow_basic, lengthCodons - 2*skipCodons);
