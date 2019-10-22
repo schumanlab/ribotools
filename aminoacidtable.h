@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <cmath>
 #include <memory>
+#include <fstream>
+#include <sstream>
 
 class AminoAcid {
 public:
@@ -57,6 +59,7 @@ public:
     
     void write();
     void log(const std::string &label);
+    void load(const std::string &fileName);
 
     void calculateRSCU();
 

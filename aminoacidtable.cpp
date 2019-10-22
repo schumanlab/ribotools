@@ -140,8 +140,19 @@ void AminoAcidTable::addPausingScore(const std::string &codon, double zscore)
 {
     auto aa = m_table.find(codon);
     if (aa == m_table.end()) return;
+
+    /*
+    if (zscore > 0.0) {
+        aa->second->score += zscore;
+        aa->second->count++;
+    }
+    else {
+        aa->second->value += zscore;
+    }
+    */
     aa->second->count++;
     aa->second->score = std::max(zscore, aa->second->score);
+    //aa->second->score += zscore;
     aa->second->value = std::min(zscore, aa->second->value);
 }
 
@@ -221,4 +232,32 @@ void AminoAcidTable::calculateRSCU()
         aa.second->score = aa.second->value / it_maxscore->second;
     }
 
+}
+
+
+void AminoAcidTable::load(const std::string &fileName)
+{
+    std::ifstream fh;
+    fh.open(fileName);
+    if (!fh.is_open()) {
+        std::cerr << "AminoAcidTable::error, failed to open amino acid table " << fileName << std::endl;
+        return;
+    }
+
+    std::string line;
+    while (std::getline(fh, line)) {
+        std::istringstream iss(line);
+        std::string codon;
+        int count;
+        double value;
+        double score;
+        iss >> codon >> count >> value >> score;
+        if (iss.fail()) continue;
+
+        setCount(codon, count);
+        setValue(codon, value);
+        setScore(codon, score);
+    }
+
+    fh.close();
 }

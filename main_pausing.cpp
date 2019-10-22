@@ -70,7 +70,7 @@ int main_pausing(const int argc, const char *argv[])
     }
 
     // print header
-    std::cout << "#name\tcodon\tcount\tmin.pausing.score\tmax.pausing.score" << std::endl;
+    //std::cout << "#name\tcodon\tcount\tmin.pausing.score\tmax.pausing.score" << std::endl;
 
     // loop over BED record
     std::string line;
@@ -105,6 +105,7 @@ int main_pausing(const int argc, const char *argv[])
         // retrieve sequence
         char *sequence = faidx_fetch_seq(fhFai, bed.name.c_str(), 0, bed.span, &bed.span);
         auto aa = AminoAcidTable();
+        int count_paused = 0;
 
         // count paused codons
         std::vector<int>::const_iterator it;
@@ -130,9 +131,11 @@ int main_pausing(const int argc, const char *argv[])
 
             // calculate zscore
             double zscore = 0.0;
-            if (background > 0.0)
+            if (background > 0.1)
                 zscore = (*it - background) / std::sqrt(background);
 
+            if (zscore >= 10.0)
+                count_paused++;
             // current codon code
             int idx_codon = static_cast<int>(it - codons.begin());
             int idx_nucleotide = idx_codon * 3 + bed.cdsStart;
@@ -140,15 +143,18 @@ int main_pausing(const int argc, const char *argv[])
             std::strncpy(codon, &sequence[idx_nucleotide], 3);
             codon[3] = '\0';
 
-            aa.addPausingScore(std::string(codon), zscore);
+            if (zscore != 0.0)
+                aa.addPausingScore(std::string(codon), zscore);
+
 
 
             //if (zscore != 0.0)
-                //std::cout << bed.gene << "\t" << (it - codons.begin()) << "\t" << codon << "\t" << zscore << std::endl;
+                //std::cout << bed.gene << "\t" << (it - codons.begin()) << "\t" << codon << "\t" << background << "\t" << zscore << std::endl;
         }
 
         // output of AminoAcid map
-        aa.log(bed.name);
+        //aa.log(bed.name);
+        std::cout << bed.gene << "\t" << bed.cdsSpan / 3 << "\t" << count_paused << std::endl;
 
         if (sequence)
             free(sequence);

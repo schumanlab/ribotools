@@ -1,23 +1,162 @@
 #include <iostream>
+#include <memory>
 #include <fstream>
-#include <unordered_map>
 #include <numeric>
 
 #include <htslib/faidx.h>
-#include <htslib/sam.h>
-#include <htslib/hts.h>
 
-#include "parserargv.h"
+
+#include "argumentparser.h"
 #include "bedrecord.h"
 #include "bamhandle.h"
 #include "aminoacidtable.h"
+#include "version.h"
 
-void readCodonParameters(AminoAcidTable &aainfo, const std::string &fileName);
-void normalizedFootprintCoveragePerCodon(const std::vector<int> &fc, double afc, const char *sequence, int qStart, int qEnd);
-void calculateMTDR(const std::string &name, const AminoAcidTable &aainfo, const std::vector<int> &fc, double afc, const char *sequence, int qStart, int qEnd);
+//void readCodonParameters(AminoAcidTable &aainfo, const std::string &fileName);
+//void normalizedFootprintCoveragePerCodon(const std::vector<int> &fc, double afc, const char *sequence, int qStart, int qEnd);
+//void calculateMTDR(const std::string &name, const AminoAcidTable &aainfo, const std::vector<int> &fc, double afc, const char *sequence, int qStart, int qEnd);
+
+
+
 
 int main_mtdr(const int argc, const char *argv[])
 {
+    std::string fileBed;
+    std::string fileFasta;
+    std::string fileTable;
+    std::vector<std::string> filesBam;
+    std::vector<std::shared_ptr<BamHandle>> handlesBam;
+    int skipCodons;
+
+    auto p = ArgumentParser("mtdr", std::string(VERSION), "calculates mean translation decoding rate");
+    p.addArgumentRequired("annotation").setKeyShort("-a").setKeyLong("--bed").setHelp("BED file containing transcript annotation");
+    p.addArgumentRequired("sequence").setKeyShort("-f").setKeyLong("--fasta").setHelp("FASTA file containing transcript sequence");
+    p.addArgumentRequired("footprints").setKeyShort("-b").setKeyLong("--bam").setHelp("BAM file containing footprint coverage").setCount(-1);
+    p.addArgumentOptional("aatable").setKeyShort("-t").setKeyLong("--table").setHelp("Amino Acid table that contains average decoding rate").setDefaultValue<std::string>("");
+    p.addArgumentOptional("skip").setKeyShort("-s").setKeyLong("--skip").setDefaultValue<int>(10).setHelp("number of codons to skip after/before start/stop codon");
+    p.addArgumentFlag("help").setKeyShort("-h").setKeyLong("--help").setHelp("prints help message");
+    p.addArgumentFlag("version").setKeyShort("-v").setKeyLong("--version").setHelp("prints major.minor.build version");
+
+    try {
+        p.parse(argc, argv);
+        fileBed = p.get<std::string>("annotation");
+        fileFasta = p.get<std::string>("sequence");
+        filesBam = p.get<std::vector<std::string>>("footprints");
+        fileTable = p.get<std::string>("aatable");
+        skipCodons = p.get<int>("skip");
+    }
+    catch (const std::exception& e) {
+        std::cerr << e.what() << std::endl;
+        return 1;
+    }
+
+    // open BAM handles
+    for (const auto &fileName : filesBam) {
+        std::shared_ptr<BamHandle> handle = std::make_shared<BamHandle>(fileName, 255, 0);
+        handlesBam.emplace_back(handle);
+    }
+
+    // open FASTA file
+    faidx_t *fhFai = fai_load(fileFasta.c_str());
+    if (!fhFai) {
+        std::cerr << "ribotools::pausing::error, failed to load FASTA file " << fileFasta << std::endl;
+        return 1;
+    }
+
+    // open BED file
+    std::ifstream fhBed;
+    fhBed.open(fileBed);
+    if (!fhBed.is_open()) {
+        std::cerr << "ribotools::pausing::error, failed to open BED file " << fileBed << std::endl;
+        return 1;
+    }
+
+    // loop over BED record
+    auto aatable = AminoAcidTable();
+    if (!fileTable.empty()) {
+        aatable.load(fileTable);
+        //aatable.write();
+    }
+
+    std::string line;
+    while (std::getline(fhBed, line)) {
+
+        // read bed record
+        auto bed = BedRecord();
+        std::stringstream iss(line);
+        iss >> bed;
+
+        // filter by ORF length
+        int lengthORF = bed.cdsSpan / 3;
+        if (lengthORF <= (2 * skipCodons + 1)) continue;
+
+        // accumulate coverage from all files
+        std::vector<int> codons(static_cast<std::size_t>(lengthORF), 0);
+        for (auto handle : handlesBam)
+            handle->calculateSiteCoverage(codons, bed.transcript, 0, bed.span, bed.cdsStart, true);
+
+        // calculate background
+        double background = static_cast<double>(std::accumulate(codons.begin() + skipCodons, codons.end() - skipCodons, 0)) / (lengthORF - 2*skipCodons);
+        if (background < 0.1) continue;
+
+        // codon NFC or MTDR
+        char *sequence = faidx_fetch_seq(fhFai, bed.name.c_str(), 0, bed.span, &bed.span);
+        std::vector<int>::const_iterator it;
+        double score_observed = 0.0;
+        double score_expected = 0.0;
+        double score_paused = 0.0;
+        int score_count = 0;
+        for (it = codons.begin() + skipCodons; it != (codons.end() - skipCodons); ++it) {
+
+            // skip empty codons
+            int fc = (*it);
+            if (fc <= 0) continue;
+
+            // retrieve current codon
+            int idx_codon = static_cast<int>(it - codons.begin());
+            int idx_nucleotide = idx_codon * 3 + bed.cdsStart;
+            char tag[4];
+            std::strncpy(tag, &sequence[idx_nucleotide], 3);
+            tag[3] = '\0';
+
+            auto codon = std::string(tag);
+            if (codon.find('N') != std::string::npos)
+                continue;
+
+            if (fileTable.empty()) { // NFC
+                //std::cout << "\t" << codon << "\t" << (fc / background) << std::endl;
+                std::cout << idx_codon << "\t" << codon << "\t" << fc << std::endl;
+            }
+            else { // MTDR
+                score_observed += std::log(fc / background);
+                score_expected += std::log(aatable.value(codon));
+                score_paused += std::log(aatable.score(codon));
+                score_count++;
+            }
+
+        }
+
+        if (!fileTable.empty()) {
+            score_observed = std::exp(score_observed / score_count);
+            score_expected = std::exp(score_expected / score_count);
+            score_paused = std::exp(score_paused / score_count);
+            std::cout << bed.gene << "\t" << bed.cdsSpan / 3 << "\t" << score_observed << "\t" << score_expected << "\t" << score_paused << std::endl;
+        }
+
+        if (sequence)
+            free(sequence);
+
+        break;
+
+    }
+
+    // destructors
+    fhBed.close();
+    fai_destroy(fhFai);
+
+    return 0;
+}
+    /*
     bool calculateNFC = true;
     std::string fileBed;
     std::string fileFasta;
@@ -169,13 +308,13 @@ void calculateMTDR(const std::string &name, const AminoAcidTable &aainfo, const 
         double timeValue = aainfo.value(codon);
         fast++;
 
-        /*
+
         if ((codonAFC / afc) > 3.0) {
             timeValue = aainfo.timePausing(codon);
             slow++;
             fast--;
         }
-        */
+
         
         // geometric mean accumulation
         logSum += std::log(timeValue);
@@ -219,3 +358,4 @@ void readCodonParameters(AminoAcidTable &aainfo, const std::string &fileName)
 
     fhs.close();
 }
+*/
