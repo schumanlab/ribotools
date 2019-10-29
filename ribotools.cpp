@@ -15,6 +15,7 @@ int main_metagene(const int argc, const char *argv[]);
 int main_mtdr(const int argc, const char *argv[]);
 int main_pausing(const int argc, const char *argv[]);
 int main_poffset(const int argc, const char *argv[]);
+int main_runoff(const int argc, const char *argv[]);
 int main_structure(const int argc, const char *argv[]);
 int main_translate(const int argc, const char *argv[]);
 int main_uorfs(const int argc, const char *argv[]);
@@ -66,6 +67,8 @@ int main(const int argc, const char *argv[]) {
         else if (subcommand == "pausing") return main_pausing(argc - 1, argv + 1);
 
         else if (subcommand == "poffset") return main_poffset(argc - 1, argv + 1);
+
+        else if (subcommand == "runoff") return main_runoff(argc - 1, argv + 1);
 
         else if (subcommand == "structure") return main_structure(argc - 1, argv + 1);
 
@@ -124,6 +127,7 @@ int printUsage()
     std::cerr << "    mtdr           calculates mean transcript decoding rate (MTDR)" << std::endl;
     std::cerr << "    pausing        calculates z-score pausing score per codon" << std::endl;
     std::cerr << "    poffset        calculates P-site offset per read length" << std::endl;
+    std::cerr << "    runoff         project runoff footprints normalised to transcript end" << std::endl;
     std::cerr << "    structure      calculates A-site coverage over protein secondary structure provided by FASTA file" << std::endl;
     std::cerr << "    translate      translates transcripts based on BED and FASTA files" << std::endl;
     std::cerr << "    uorfs          screens for upstream open reading frame" << std::endl;

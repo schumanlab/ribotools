@@ -141,19 +141,18 @@ void AminoAcidTable::addPausingScore(const std::string &codon, double zscore)
     auto aa = m_table.find(codon);
     if (aa == m_table.end()) return;
 
-    /*
     if (zscore > 0.0) {
-        aa->second->score += zscore;
+        aa->second->score += std::log(zscore);
         aa->second->count++;
     }
     else {
         aa->second->value += zscore;
     }
-    */
-    aa->second->count++;
-    aa->second->score = std::max(zscore, aa->second->score);
+
+    //aa->second->count++;
+    //aa->second->score = std::max(zscore, aa->second->score);
     //aa->second->score += zscore;
-    aa->second->value = std::min(zscore, aa->second->value);
+    //aa->second->value = std::min(zscore, aa->second->value);
 }
 
 

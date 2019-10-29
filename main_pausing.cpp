@@ -153,8 +153,8 @@ int main_pausing(const int argc, const char *argv[])
         }
 
         // output of AminoAcid map
-        //aa.log(bed.name);
-        std::cout << bed.gene << "\t" << bed.cdsSpan / 3 << "\t" << count_paused << std::endl;
+        aa.log(bed.name);
+        //std::cout << bed.gene << "\t" << bed.cdsSpan / 3 << "\t" << count_paused << std::endl;
 
         if (sequence)
             free(sequence);

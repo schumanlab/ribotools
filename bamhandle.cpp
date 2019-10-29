@@ -105,7 +105,7 @@ void BamHandle::calculateFootprintCoverage(std::vector<int> &fc, const std::stri
 
         // read linear coordinates
         int readStart = alignment->core.pos;
-        int readLength = bam_cigar2qlen(alignment->core.n_cigar, bam_get_cigar(alignment));
+        int readLength = bam_cigar2qlen(static_cast<int>(alignment->core.n_cigar), bam_get_cigar(alignment));
 
         int offsetStart = (qStart < readStart) ? (readStart - qStart) : 0;
         int offsetEnd = ((offsetStart + readLength) < qEnd) ? (offsetStart + readLength) : (qEnd - qStart);
