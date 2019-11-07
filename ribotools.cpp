@@ -14,6 +14,7 @@ int main_length(const int argc, const char *argv[]);
 int main_metagene(const int argc, const char *argv[]);
 int main_mtdr(const int argc, const char *argv[]);
 int main_pausing(const int argc, const char *argv[]);
+int main_periodicity(const int argc, const char *argv[]);
 int main_poffset(const int argc, const char *argv[]);
 int main_runoff(const int argc, const char *argv[]);
 int main_structure(const int argc, const char *argv[]);
@@ -65,6 +66,8 @@ int main(const int argc, const char *argv[]) {
         else if (subcommand == "mtdr") return main_mtdr(argc - 1, argv + 1);
 
         else if (subcommand == "pausing") return main_pausing(argc - 1, argv + 1);
+
+        else if (subcommand == "periodicity") return main_periodicity(argc - 1, argv + 1);
 
         else if (subcommand == "poffset") return main_poffset(argc - 1, argv + 1);
 
@@ -126,6 +129,7 @@ int printUsage()
     std::cerr << "    metagene       project footprints to a metagene histogram" << std::endl;
     std::cerr << "    mtdr           calculates mean transcript decoding rate (MTDR)" << std::endl;
     std::cerr << "    pausing        calculates z-score pausing score per codon" << std::endl;
+    std::cerr << "    periodicity    creates P-site periodicity histogram" << std::endl;
     std::cerr << "    poffset        calculates P-site offset per read length" << std::endl;
     std::cerr << "    runoff         project runoff footprints normalised to transcript end" << std::endl;
     std::cerr << "    structure      calculates A-site coverage over protein secondary structure provided by FASTA file" << std::endl;
