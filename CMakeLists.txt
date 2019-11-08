@@ -20,6 +20,7 @@ set(SOURCE
     bamhandle.cpp bamhandle.h
     bedio.cpp bedio.h
     bedrecord.cpp bedrecord.h
+    seqio.cpp seqio.h
     version.cpp version.h
     main_basefreq.cpp
     main_cai.cpp
