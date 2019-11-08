@@ -1,33 +1,6 @@
 #include "bedio.h"
 
-BedIO::BedIO(const std::string &fileName)
-{
-    m_fileStream.open(fileName);
-    if (!m_fileStream.is_open())
-        throw std::logic_error("ribotools::bedio::error, failed to open BED file " + fileName);
-}
-
-
-BedIO::~BedIO()
-{
-    if (m_fileStream.is_open())
-        m_fileStream.close();
-}
-
-
-bool BedIO::next()
-{
-    bool isNext = false;
-    if (std::getline(m_fileStream, m_buffer)) {
-        m_bed.parse(m_buffer);
-        isNext = true;
-    }
-
-    return isNext;
-}
-
-
-void Bed12::parse(const std::string &line)
+bool Bed12::parse(const std::string &line)
 {
     std::istringstream iss(line);
     std::string blockSizesList;
@@ -35,47 +8,45 @@ void Bed12::parse(const std::string &line)
 
     // parse stream
     iss >>
-            chrom >>
-            chromStart >>
-            chromEnd >>
-            label >>
-            score >>
-            strand >>
-            thickStart >>
-            thickEnd >>
-            itemRgb >>
-            blocks >>
+            m_chrom >>
+            m_chromStart >>
+            m_chromEnd >>
+            m_name >>
+            m_score >>
+            m_strand >>
+            m_thickStart >>
+            m_thickEnd >>
+            m_itemRgb >>
+            m_blocks >>
             blockSizesList >>
             blockStartsList;
 
     if (!iss.eof() || iss.fail())
-        throw std::logic_error("ribotools::bedio::error, failed to convert value\n" + line);
+        return false;
 
     // parse blocks
-    parseBlocks(blockSizes, blockSizesList);
-    parseBlocks(blockStarts, blockStartsList);
-
-    if (blockSizes.size() != blockStarts.size())
-        throw std::logic_error("ribotools::bedio::error, blocks mismatch\n" + line);
+    parseBlocks(m_blockSizes, blockSizesList);
+    parseBlocks(m_blockStarts, blockStartsList);
 
     // parse exons
     parseExons();
 
+    return true;
 }
 
 bool Bed12::overlap(const std::string &queryChrom, int queryStart, int queryEnd)
 {
-    return (chrom.compare(queryChrom) == 0) && (chromStart <= queryEnd) && (queryStart <= chromEnd);
+    return (m_chrom.compare(queryChrom) == 0) && (m_chromStart <= queryEnd) && (queryStart <= m_chromEnd);
 }
 
-std::string Bed12::name(std::size_t index, const char delimiter) const
+const std::string Bed12::name(std::size_t index, const char delimiter) const
 {
     if (index == 0)
-        return label;
+        return m_name;
 
     // split label by delimiter
-    std::string _name = label;
-    std::istringstream iss(label);
+    std::string _name = m_name;
+    std::istringstream iss(m_name);
     std::string token;
     std::vector<std::string> listOfTokens;
     while (std::getline(iss, token, delimiter))
@@ -103,34 +74,76 @@ void Bed12::parseBlocks(std::vector<int> &array, const std::string &list)
 
 void Bed12::parseExons()
 {
-    span = 0;
+    m_span = 0;
     std::vector<int>::const_iterator itStarts;
     std::vector<int>::const_iterator itSizes;
-    for (itStarts = blockStarts.begin(), itSizes = blockSizes.begin();
-         itStarts != blockStarts.end() && itSizes != blockSizes.end();
+    for (itStarts = m_blockStarts.begin(), itSizes = m_blockSizes.begin();
+         itStarts != m_blockStarts.end() && itSizes != m_blockSizes.end();
          ++itStarts, ++itSizes) {
 
-        int exonStart = chromStart + *itStarts;
+        int exonStart = m_chromStart + *itStarts;
         int exonEnd = exonStart + *itSizes;
 
-        if ((exonStart <= thickStart) && (thickStart <= exonEnd))
-            orfStart = (thickStart - exonStart) + span;
+        if ((exonStart <= m_thickStart) && (m_thickStart <= exonEnd))
+            m_orfStart = (m_thickStart - exonStart) + m_span;
 
-        if ((exonStart <= thickEnd) && (thickEnd <= exonEnd))
-            orfEnd = (thickEnd - exonStart) + span;
+        if ((exonStart <= m_thickEnd) && (m_thickEnd <= exonEnd))
+            m_orfEnd = (m_thickEnd - exonStart) + m_span;
 
-        span += *itSizes;
+        m_span += *itSizes;
     }
 
     // swap orfStart and orfEnd if negative strand
-    if (strand == '-') {
-        orfStart = span - orfStart;
-        orfEnd = span - orfEnd;
-        std::swap(orfStart, orfEnd);
+    if (m_strand == '-') {
+        m_orfStart = m_span - m_orfStart;
+        m_orfEnd = m_span - m_orfEnd;
+        std::swap(m_orfStart, m_orfEnd);
     }
 
     // correct for unsynced ORF
-    orfSpan = orfEnd - orfStart;
-    orfSpan = orfSpan - (orfSpan % 3);
-    orfEnd = orfStart + orfSpan;
+    m_orfSpan = m_orfEnd - m_orfStart;
+    m_orfSpan = m_orfSpan - (m_orfSpan % 3);
+    m_orfEnd = m_orfStart + m_orfSpan;
+}
+
+BedIO::BedIO() {}
+
+BedIO::BedIO(const std::string &fileName) {
+    m_fileStream.open(fileName);
+    if (!m_fileStream.is_open())
+        m_error = "bedio::error, failed to open " + fileName;
+}
+
+BedIO::~BedIO() {
+    if (m_fileStream.is_open())
+        m_fileStream.close();
+}
+
+bool BedIO::open(const std::string &fileName) {
+    m_fileStream.open(fileName);
+    if (!m_fileStream.is_open()) {
+        m_error = "bedio::error, failed to open " + fileName;
+        return false;
+    }
+    return true;
+}
+
+bool BedIO::next() {
+
+    bool isNext = false;
+
+    if (std::getline(m_fileStream, m_buffer)) {
+
+        if (!m_bed.parse(m_buffer))
+            m_error = "bedio::error, failed to parse line " + m_buffer;
+        else
+            isNext = true;
+    }
+
+    if (m_fileStream.bad()) {
+        m_error = "bedio::error, failed while reading line";
+        isNext = false;
+    }
+
+    return isNext;
 }
