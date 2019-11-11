@@ -18,6 +18,7 @@ set(SOURCE
     argumentparser.h
     aminoacidtable.cpp aminoacidtable.h
     bamhandle.cpp bamhandle.h
+    bamio.cpp bamio.h
     bedio.cpp bedio.h
     bedrecord.cpp bedrecord.h
     seqio.cpp seqio.h
