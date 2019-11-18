@@ -1,6 +1,6 @@
 #include "bamio.h"
 
-Bam::Bam() :
+BamIO::BamIO() :
     m_mapq(0),
     m_readLength(0),
     m_handleBam(nullptr),
@@ -10,7 +10,19 @@ Bam::Bam() :
     m_alignment(nullptr)
 {}
 
-Bam::~Bam() {
+BamIO::BamIO(const std::string &fileName, uint8_t _mapq, uint16_t _readLength) :
+    m_mapq(0),
+    m_readLength(0),
+    m_handleBam(nullptr),
+    m_handleBai(nullptr),
+    m_handleHeader(nullptr),
+    m_handleIterator(nullptr),
+    m_alignment(nullptr)
+{
+    open(fileName, _mapq, _readLength);
+}
+
+BamIO::~BamIO() {
     if (m_alignment)
         bam_destroy1(m_alignment);
 
@@ -27,81 +39,87 @@ Bam::~Bam() {
         hts_close(m_handleBam);
 }
 
-bool Bam::isOpen() const {
+bool BamIO::isOpen() const {
     return (m_handleBam && m_handleBai && m_handleHeader && m_alignment);
 }
 
-bool Bam::open(const std::string &fileName) {
+bool BamIO::open(const std::string &fileName, uint8_t _mapq, uint16_t _readLength) {
+
     m_handleBam = hts_open(fileName.c_str(), "r");
-    if (!m_handleBam)
+    if (!m_handleBam) {
+        m_error = "BamIO::error, failed to open BAM file " + fileName;
         return false;
+    }
 
     m_handleBai = hts_idx_load(fileName.c_str(), HTS_FMT_BAI);
-    if (!m_handleBai)
+    if (!m_handleBai) {
+        m_error = "BamIO::error, failed to laod BAI index " + fileName + ".bai";
         return false;
+    }
 
     m_handleHeader = sam_hdr_read(m_handleBam);
-    if (!m_handleHeader)
+    if (!m_handleHeader) {
+        m_error = "BamIO::error, failed to parse BAM header";
         return false;
+    }
 
     m_alignment = bam_init1();
-    if (!m_alignment)
+    if (!m_alignment) {
+        m_error = "BamIO::error, failed to allocate alignment memory";
         return false;
+    }
+
+    setMapQ(_mapq);
+    setReadLength(_readLength);
 
     return true;
 }
 
-void Bam::rewind() {
-    // check if iterator is set and reset
-    if (m_handleIterator) {
-        bam_itr_destroy(m_handleIterator);
-        m_handleIterator = nullptr;
-    }
-}
 
-uint32_t Bam::count() {
+uint32_t BamIO::count() {
     uint32_t counter = 0;
     // read bam file record by record
-    while (readBam(m_alignment) > 0)
+    while (next())
         counter++;
     return counter;
 }
 
-bool Bam::query(const std::string queryChrom, int queryStart, int queryEnd) {
+bool BamIO::query(const std::string queryChrom, int queryStart, int queryEnd) {
     int queryTid = bam_name2id(m_handleHeader, queryChrom.c_str());
-    rewind();
     m_handleIterator = bam_itr_queryi(m_handleBai, queryTid, queryStart, queryEnd);
     return (m_handleIterator == nullptr);
 }
 
-int Bam::readBam(bam1_t *b) {
-    int ret;
+bool BamIO::next() {
+    int ret = -1;
     while (1) {
 
         // read next iterator or next sam line
         ret = m_handleIterator ?
-                    sam_itr_next(m_handleBam, m_handleIterator, b) :
-                    sam_read1(m_handleBam, m_handleHeader, b);
+                    sam_itr_next(m_handleBam, m_handleIterator, m_alignment) :
+                    sam_read1(m_handleBam, m_handleHeader, m_alignment);
 
         // invalid record
         if ( ret < 0) break;
 
         // skip special
-        if ( b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL | BAM_FDUP) ) continue;
+        if ( m_alignment->core.flag & (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL | BAM_FDUP) ) continue;
 
         // filter by maping quality
         if (m_mapq > 0) {
-            if ( static_cast<uint8_t>(b->core.qual) < m_mapq ) continue;
+            if ( static_cast<uint8_t>(m_alignment->core.qual) < m_mapq ) continue;
         }
 
         // filter by minimum read length
         if (m_readLength > 0) {
-            const uint8_t *p_cigar = b->data + b->core.l_qname;
-            if (bam_cigar2qlen(static_cast<int>(b->core.n_cigar), reinterpret_cast<const uint32_t *>(p_cigar)) < m_readLength) continue;
+            const uint8_t *p_cigar = m_alignment->data + m_alignment->core.l_qname;
+            if (bam_cigar2qlen(static_cast<int>(m_alignment->core.n_cigar), reinterpret_cast<const uint32_t *>(p_cigar)) < m_readLength) continue;
         }
 
         // successful read
         break;
     }
-    return ret;
+    return ret > 0;
 }
+
+

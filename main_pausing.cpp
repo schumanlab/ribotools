@@ -1,14 +1,19 @@
 #include <iostream>
 #include <memory>
-#include <fstream>
-#include <numeric>
-#include <cmath>
 
-#include <htslib/faidx.h>
+
+//#include <fstream>
+//#include <numeric>
+//#include <cmath>
+//#include <htslib/faidx.h>
 
 #include "argumentparser.h"
-#include "bamhandle.h"
-#include "bedrecord.h"
+//#include "bamhandle.h"
+//#include "bedrecord.h"
+#include "bedio.h"
+#include "bamio.h"
+#include "seqio.h"
+
 #include "aminoacidtable.h"
 #include "version.h"
 
@@ -18,7 +23,7 @@ int main_pausing(const int argc, const char *argv[])
     std::string fileBed;
     std::string fileFasta;
     std::vector<std::string> filesBam;
-    std::vector<std::shared_ptr<BamHandle>> handlesBam;
+    //std::vector<std::shared_ptr<BamHandle>> handlesBam;
     int backgroundWindow_basic;
     int backgroundWindow_flank;
     int skipCodons;
@@ -48,6 +53,14 @@ int main_pausing(const int argc, const char *argv[])
     }
 
 
+
+
+    return 0;
+}
+
+
+
+/*
     // open BAM handles
     for (const auto &fileName : filesBam) {
         std::shared_ptr<BamHandle> handle = std::make_shared<BamHandle>(fileName, 255, 0);
@@ -166,8 +179,15 @@ int main_pausing(const int argc, const char *argv[])
     // destructors
     fhBed.close();
     fai_destroy(fhFai);
+ */
 
-    return 0;
+
+
+/*
+ *  VERSION 1.0
+ *
+ *
+ */
     /*
 
     if (parser.find("--bam")) {
@@ -304,4 +324,4 @@ int main_pausing(const int argc, const char *argv[])
 
     return 0;
     */
-}
+
