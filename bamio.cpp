@@ -3,6 +3,7 @@
 BamIO::BamIO() :
     m_mapq(0),
     m_readLength(0),
+    m_name(""),
     m_handleBam(nullptr),
     m_handleBai(nullptr),
     m_handleHeader(nullptr),
@@ -13,6 +14,7 @@ BamIO::BamIO() :
 BamIO::BamIO(const std::string &fileName, uint8_t _mapq, uint16_t _readLength) :
     m_mapq(0),
     m_readLength(0),
+    m_name(""),
     m_handleBam(nullptr),
     m_handleBai(nullptr),
     m_handleHeader(nullptr),
@@ -71,8 +73,25 @@ bool BamIO::open(const std::string &fileName, uint8_t _mapq, uint16_t _readLengt
 
     setMapQ(_mapq);
     setReadLength(_readLength);
+    m_name = fileName;
 
     return true;
+}
+
+const std::string BamIO::name() const {
+    std::string tag = m_name;
+
+    // remove path
+    const size_t idx_path = tag.find_last_of("\\/");
+    if (std::string::npos != idx_path)
+        tag.erase(0, idx_path + 1);
+
+    // remove extension
+    const size_t idx_extension = tag.rfind('.');
+    if (std::string::npos != idx_extension)
+        tag.erase(idx_extension);
+
+    return tag;
 }
 
 
@@ -84,7 +103,7 @@ uint32_t BamIO::count() {
     return counter;
 }
 
-bool BamIO::query(const std::string queryChrom, int queryStart, int queryEnd) {
+bool BamIO::query(const std::string &queryChrom, int queryStart, int queryEnd) {
     int queryTid = bam_name2id(m_handleHeader, queryChrom.c_str());
     m_handleIterator = bam_itr_queryi(m_handleBai, queryTid, queryStart, queryEnd);
     return (m_handleIterator == nullptr);
@@ -120,6 +139,50 @@ bool BamIO::next() {
         break;
     }
     return ret > 0;
+}
+
+void BamIO::depth(std::vector<int> &coverage, const std::string &queryChrom, int queryStart, int queryEnd) {
+
+    query(queryChrom, queryStart, queryEnd);
+
+    mplp_aux_t data;
+    mplp_aux_t *p_data = &data;
+    void *v_data = p_data;
+    p_data->fp = m_handleBam;
+    p_data->hdr = m_handleHeader;
+    p_data->iter = m_handleIterator;
+    p_data->min_mapQ = m_mapq;
+    p_data->min_len = m_readLength;
+
+
+    bam_mplp_t mplp = bam_mplp_init(1, read_bam,  &v_data);
+    bam_mplp_set_maxcnt(mplp, INT_MAX);
+
+    bam_pileup1_t plp;
+    const bam_pileup1_t *p_plp = &plp;
+    const bam_pileup1_t **pp_plp = &p_plp;
+
+    int ret, tid, pos, n_plp;
+    std::vector<int>::iterator it;
+
+    while ((ret=bam_mplp_auto(mplp, &tid, &pos, &n_plp, pp_plp)) > 0) {
+
+        if ((pos < queryStart) || (queryEnd <= pos)) continue;
+
+        int m = 0;
+        for (int j = 0; j < n_plp; ++j) {
+            const bam_pileup1_t *p = p_plp + j;
+            if (p->is_del || p->is_refskip) ++m;
+            else if (p->qpos < p->b->core.l_qseq && bam_get_qual(p->b)[p->qpos] < data.min_mapQ) ++m;
+        }
+
+
+        it = coverage.begin() + pos - queryStart;
+        if (it < coverage.end())
+            *it += n_plp - m;
+    }
+
+    bam_mplp_destroy(mplp);
 }
 
 
