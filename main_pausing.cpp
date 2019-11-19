@@ -1,9 +1,9 @@
 #include <iostream>
 #include <memory>
-
+#include <numeric>
 
 //#include <fstream>
-//#include <numeric>
+
 //#include <cmath>
 //#include <htslib/faidx.h>
 
@@ -16,6 +16,82 @@
 
 #include "aminoacidtable.h"
 #include "version.h"
+
+
+std::vector<float> reduceToCodons(const std::vector<int> &nucleotides) {
+    std::vector<float> codons(nucleotides.size()/3, 0);
+    const float codon_step = 3.0;
+
+    for (std::size_t i = 0; i < codons.size(); ++i) {
+        codons.at(i) = (nucleotides.at(3*i) + nucleotides.at(3*i+1) + nucleotides.at(3*i+2)) / codon_step;
+    }
+    return codons;
+}
+
+
+std::vector<float> calculatePauseScore(const std::vector<float> &coverage, int basic, int flank) {
+
+    // initialize score
+    std::vector<float> score(coverage.size(), 0);
+
+    // calculate basic score
+    float backgroundBasicSum = 0.0;
+    int backgroundBasicCount = std::min(basic, static_cast<int>(coverage.size()));
+
+
+    for (std::vector<float>::const_iterator iv = coverage.begin(); iv != coverage.begin() + backgroundBasicCount; ++iv)
+        backgroundBasicSum += *iv;
+    float backgroundBasic = backgroundBasicSum / backgroundBasicCount;
+
+    // calculate sliding score
+    std::vector<float>::iterator ov = score.begin();
+    std::vector<float>::const_iterator ivPrev = coverage.begin();
+    std::vector<float>::const_iterator ivNext = coverage.begin() + flank;
+
+    // initialize previous background
+    float backgroundPrevSum = 0.0;
+    int backgroundPrevCount = 0;
+
+    // initialize next background
+    float backgroundNextSum = 0.0;
+    int backgroundNextCount = flank;
+    for (std::vector<float>::const_iterator iv = coverage.begin();
+         iv != coverage.begin() + flank; ++iv)
+        backgroundNextSum += *iv;
+
+    // loop coverage
+    for (std::vector<float>::const_iterator iv = coverage.begin();
+         iv != coverage.end(); ++iv) {
+
+        // background next
+        backgroundNextSum -= *iv;
+        if (ivNext < coverage.end()) {
+            backgroundNextSum += *ivNext;
+            ++ivNext;
+        }
+        else {
+            backgroundNextCount--;
+        }
+        float backgroundNext = (backgroundNextCount > 0) ? (backgroundNextSum / backgroundNextCount) : backgroundNextSum;
+
+        // background previous
+        float backgroundPrev = (backgroundPrevCount > 0) ? (backgroundPrevSum / backgroundPrevCount) : backgroundPrevSum;
+        backgroundPrevSum += *iv;
+        backgroundPrevCount++;
+        if ((iv - ivPrev) == flank) {
+            backgroundPrevSum -= *ivPrev;
+            ++ivPrev;
+            backgroundPrevCount--;
+        }
+
+        // calculate z-score
+        float background = std::max(backgroundBasic, std::max(backgroundPrev, backgroundNext));
+        *ov = (background > 0) ? (*iv - background) / std::sqrt(background) : 0.0;
+        ++ov;
+    }
+
+    return score;
+}
 
 
 int main_pausing(const int argc, const char *argv[])
@@ -51,6 +127,67 @@ int main_pausing(const int argc, const char *argv[])
         std::cerr << e.what() << std::endl;
         return 1;
     }
+
+
+    auto hBed = BedIO(fileBed);
+    if (!hBed.isOpen()) {
+        std::cerr << "ribotools::" + hBed.error() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    auto hFas = SeqIO(fileFasta);
+    if (!hFas.isOpen()) {
+        std::cerr << "ribotools::" + hFas.error() << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    std::vector<std::shared_ptr<BamIO>> hBams;
+    for (auto fileName : filesBam) {
+        auto handle = std::make_shared<BamIO>(fileName);
+        if (!handle->isOpen()) {
+            std::cerr << "ribotools::" + handle->error() << std::endl;
+            return EXIT_FAILURE;
+        }
+        hBams.emplace_back(handle);
+    }
+
+
+
+    while (hBed.next()) {
+
+
+        //std::cout << hBed.bed().name(1) << ":" << hBed.bed().orfStart() << "-" << hBed.bed().orfEnd() << std::endl;
+
+
+        // retrieve ORF coverage
+        std::vector<int> orfCoverage(static_cast<std::size_t>(hBed.bed().orfSpan()), 0);
+        for (auto handle : hBams) {
+            handle->depth(orfCoverage, hBed.bed().name(1), hBed.bed().orfStart(), hBed.bed().orfEnd());
+        }
+
+
+        // reduce to codons
+        std::vector<float> orfCodons = reduceToCodons(orfCoverage);
+
+        // calculate pause score
+        std::vector<float> pauseScore = calculatePauseScore(orfCodons, backgroundWindow_basic, backgroundWindow_flank);
+
+
+
+        for (std::size_t i = 0; i < orfCodons.size(); ++i) {
+            if (pauseScore.at(i) > 0) {
+                std::cout << hBed.bed().name(2) << "\t" << i << "\t" << pauseScore.at(i) << std::endl;
+            }
+            //std::cout << i << "\t" << orfCodons.at(i) << "\t" << pauseScore.at(i) << std::endl;
+        }
+
+        // retrieve ORF sequence
+        //hFas.fetch(hBed.bed().name(), hBed.bed().orfStart(), hBed.bed().orfEnd());
+        //std::cout << hFas.sequence() << std::endl;
+
+
+    }
+
 
 
 
