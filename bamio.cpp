@@ -95,8 +95,8 @@ const std::string BamIO::name() const {
 }
 
 
-uint32_t BamIO::count() {
-    uint32_t counter = 0;
+int32_t BamIO::count() {
+    int32_t counter = 0;
     // read bam file record by record
     while (next())
         counter++;
@@ -141,7 +141,10 @@ bool BamIO::next() {
     return ret > 0;
 }
 
-void BamIO::depth(std::vector<int> &coverage, const std::string &queryChrom, int queryStart, int queryEnd) {
+std::vector<int> BamIO::depth(const std::string &queryChrom, int queryStart, int queryEnd) {
+
+    std::vector<int> depth(static_cast<std::size_t>(queryEnd - queryStart), 0);
+    std::vector<int>::iterator it = depth.begin();
 
     query(queryChrom, queryStart, queryEnd);
 
@@ -163,7 +166,7 @@ void BamIO::depth(std::vector<int> &coverage, const std::string &queryChrom, int
     const bam_pileup1_t **pp_plp = &p_plp;
 
     int ret, tid, pos, n_plp;
-    std::vector<int>::iterator it;
+
 
     while ((ret=bam_mplp_auto(mplp, &tid, &pos, &n_plp, pp_plp)) > 0) {
 
@@ -177,12 +180,14 @@ void BamIO::depth(std::vector<int> &coverage, const std::string &queryChrom, int
         }
 
 
-        it = coverage.begin() + pos - queryStart;
-        if (it < coverage.end())
-            *it += n_plp - m;
+        it = depth.begin() + pos - queryStart;
+        if (it < depth.end())
+            *it = n_plp - m;
     }
 
     bam_mplp_destroy(mplp);
+
+    return depth;
 }
 
 

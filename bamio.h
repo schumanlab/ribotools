@@ -27,11 +27,11 @@ public:
     }
     int32_t readStart() const {return m_alignment->core.pos;}
     void setReadLength(uint16_t value) {m_readLength = value;}
-    uint32_t count();
+    int32_t count();
     bool query(const std::string &queryChrom, int queryStart, int queryEnd);
     bool next();
     const std::string error() const {return m_error;}
-    void depth(std::vector<int> &data, const std::string &queryChrom, int queryStart, int queryEnd);
+    std::vector<int> depth(const std::string &queryChrom, int queryStart, int queryEnd);
 
 private:
     uint8_t m_mapq;
