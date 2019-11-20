@@ -17,6 +17,11 @@
 #include "aminoacidtable.h"
 #include "version.h"
 
+bool cmpf(float A, float B, float epsilon = 0.000005f)
+{
+    return (std::fabs(A - B) < epsilon);
+}
+
 
 std::vector<float> reduceToCodons(const std::vector<int> &nucleotides) {
     std::vector<float> codons(nucleotides.size()/3, 0);
@@ -29,10 +34,10 @@ std::vector<float> reduceToCodons(const std::vector<int> &nucleotides) {
 }
 
 
-std::vector<float> calculatePauseScore(const std::vector<float> &coverage, int basic, int flank) {
-
-    // initialize score
-    std::vector<float> score(coverage.size(), 0);
+void calculatePauseScore(std::vector<float>::iterator ov,
+                                       std::vector<float>::iterator ovEnd,
+                                       const std::vector<float> &coverage,
+                                       int basic, int flank) {
 
     // calculate basic score
     float backgroundBasicSum = 0.0;
@@ -44,7 +49,6 @@ std::vector<float> calculatePauseScore(const std::vector<float> &coverage, int b
     float backgroundBasic = backgroundBasicSum / backgroundBasicCount;
 
     // calculate sliding score
-    std::vector<float>::iterator ov = score.begin();
     std::vector<float>::const_iterator ivPrev = coverage.begin();
     std::vector<float>::const_iterator ivNext = coverage.begin() + flank;
 
@@ -86,11 +90,10 @@ std::vector<float> calculatePauseScore(const std::vector<float> &coverage, int b
 
         // calculate z-score
         float background = std::max(backgroundBasic, std::max(backgroundPrev, backgroundNext));
+        if (ov != ovEnd)
         *ov = (background > 0) ? (*iv - background) / std::sqrt(background) : 0.0;
         ++ov;
     }
-
-    return score;
 }
 
 
@@ -152,6 +155,12 @@ int main_pausing(const int argc, const char *argv[])
     }
 
 
+    // print header
+    std::cout << "#gene\tcodon\tregion";
+    for (auto handle : hBams)
+        std::cout << "\t" << handle->name();
+    std::cout << std::endl;
+
 
     while (hBed.next()) {
 
@@ -159,27 +168,70 @@ int main_pausing(const int argc, const char *argv[])
         //std::cout << hBed.bed().name(1) << ":" << hBed.bed().orfStart() << "-" << hBed.bed().orfEnd() << std::endl;
 
 
-        // retrieve ORF coverage
-        std::vector<int> orfCoverage(static_cast<std::size_t>(hBed.bed().orfSpan()), 0);
+        // pause score per BAM
+        int handleCounter = 0;
+        int spanInCodons = hBed.bed().orfSpan() / 3;
+        std::vector<float> pauseScore(static_cast<std::size_t>(spanInCodons) * hBams.size(), 0.0f); // buffer container
+
         for (auto handle : hBams) {
-            handle->depth(orfCoverage, hBed.bed().name(1), hBed.bed().orfStart(), hBed.bed().orfEnd());
-        }
 
+            // count reads
+            handle->query(hBed.bed().name(1), hBed.bed().orfStart(), hBed.bed().orfEnd());
+            int readCount = handle->count();
+            float readsPerCodon = static_cast<float>(readCount) / spanInCodons;
+            if (readsPerCodon > 0.1f) {
 
-        // reduce to codons
-        std::vector<float> orfCodons = reduceToCodons(orfCoverage);
+                // depth
+                std::vector<int> orfDepth = handle->depth(hBed.bed().name(1), hBed.bed().orfStart(), hBed.bed().orfEnd());
 
-        // calculate pause score
-        std::vector<float> pauseScore = calculatePauseScore(orfCodons, backgroundWindow_basic, backgroundWindow_flank);
+                // reduce to codons
+                std::vector<float> orfCodons = reduceToCodons(orfDepth);
 
+                // calculate pause score
+                std::vector<float>::iterator itBegin = pauseScore.begin() + spanInCodons * handleCounter;
+                std::vector<float>::iterator itEnd = pauseScore.begin() + spanInCodons * (handleCounter + 1);
+                calculatePauseScore(itBegin, itEnd, orfCodons, backgroundWindow_basic, backgroundWindow_flank);
 
-
-        for (std::size_t i = 0; i < orfCodons.size(); ++i) {
-            if (pauseScore.at(i) > 0) {
-                std::cout << hBed.bed().name(2) << "\t" << i << "\t" << pauseScore.at(i) << std::endl;
             }
-            //std::cout << i << "\t" << orfCodons.at(i) << "\t" << pauseScore.at(i) << std::endl;
+
+            handleCounter++;
         }
+
+
+        // output matrix
+        std::vector<float>::iterator it = pauseScore.begin();
+        int regionTag = 0;
+        for (int i = 0; i < spanInCodons; ++i) {
+
+            std::stringstream outBuffer;
+
+            // update region tag : 0 - initiation, 1 - elongation, 2 - termination
+            if (i <= skipCodons)
+                regionTag = 0;
+            else if ((skipCodons < i) && (i < (spanInCodons - skipCodons)))
+                regionTag = 1;
+            else
+                regionTag = 2;
+
+            outBuffer << hBed.bed().name(2) << "\t" << i << "\t" << regionTag;
+            int handleCounter = 0;
+            int isZero = 0;
+            int isNegative = 0;
+            for (auto handle : hBams) {
+                float value = *(it + handleCounter * spanInCodons);
+                if (cmpf(value, 0.0f)) isZero++;
+                if (value < 0.0f) isNegative++;
+
+                outBuffer << "\t" << value;
+                handleCounter++;
+            }
+            outBuffer << std::endl;
+            ++it;
+
+            if ((isNegative < handleCounter/2) && (isZero < handleCounter/2))
+                std::cout << outBuffer.str();
+        }
+
 
         // retrieve ORF sequence
         //hFas.fetch(hBed.bed().name(), hBed.bed().orfStart(), hBed.bed().orfEnd());
