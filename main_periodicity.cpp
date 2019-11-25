@@ -22,13 +22,15 @@ struct Offset {
 
 void calculatePSiteOffset(std::map<Offset, uint32_t> &posMap, BedIO &hBed, BamIO &hBam){
 
+    auto aux = hBam.aux.at(0);
+
     while (hBed.next()) {
 
-        hBam.query(hBed.bed().name(1), hBed.bed().orfStart(), hBed.bed().orfStart() + 1);
-        while (hBam.next()) {
-            int32_t readStart = hBam.readStart();
-            int32_t readEnd = hBam.readEnd();
-            int32_t readLength = hBam.readLength();
+        aux->query(hBed.bed().name(1), hBed.bed().orfStart(), hBed.bed().orfStart() + 1);
+        while (aux->next()) {
+            int32_t readStart = aux->readStart();
+            int32_t readEnd = aux->readEnd();
+            int32_t readLength = aux->readLength();
 
             Offset key = {readLength, hBed.bed().orfStart() - readStart, readEnd - hBed.bed().orfStart()};
 
@@ -72,7 +74,7 @@ int main_periodicity(int argc, const char *argv[])
 
     auto hBam = BamIO(fileBam, 255);
     if (!hBam.isOpen()) {
-        std::cerr << "ribotools::" + hBam.error() << std::endl;
+        std::cerr << "ribotools::" + hBam.what() << std::endl;
         return EXIT_FAILURE;
     }
 

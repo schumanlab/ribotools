@@ -198,20 +198,17 @@ int main_pausing(const int argc, const char *argv[])
     }
     */
 
-    std::vector<std::shared_ptr<BamIO>> hBams;
-    for (auto fileName : filesBam) {
-        auto handle = std::make_shared<BamIO>(fileName);
-        if (!handle->isOpen()) {
-            std::cerr << "ribotools::" + handle->error() << std::endl;
-            return EXIT_FAILURE;
-        }
-        hBams.emplace_back(handle);
+    auto hBam = BamIO(filesBam);
+    if (!hBam.isOpen()) {
+        std::cerr << "ribotools::" + hBam.what() << std::endl;
+        return EXIT_FAILURE;
     }
+
 
 
     // print header
     std::cout << "#gene\tcodon\tregion";
-    for (auto handle : hBams)
+    for (auto handle : hBam.aux)
         std::cout << "\t" << handle->name();
     std::cout << std::endl;
 
@@ -224,11 +221,11 @@ int main_pausing(const int argc, const char *argv[])
         // pause score per BAM
         int handleCounter = 0;
         int spanInCodons = hBed.bed().orfSpan() / 3;
-        std::vector<float> pauseScore(static_cast<std::size_t>(spanInCodons) * hBams.size(), 0.0f); // buffer container
+        std::vector<float> pauseScore(static_cast<std::size_t>(spanInCodons) * hBam.aux.size(), 0.0f); // buffer container
 
         bool useFlag = false;
 
-        for (auto handle : hBams) {
+        for (auto handle : hBam.aux) {
 
             // count reads
             handle->query(hBed.bed().name(1), hBed.bed().orfStart(), hBed.bed().orfEnd());
@@ -287,7 +284,7 @@ int main_pausing(const int argc, const char *argv[])
             int handleCounter = 0;
             int isZero = 0;
             int isNegative = 0;
-            for (auto handle : hBams) {
+            for (auto handle : hBam.aux) {
                 float value = *(it + handleCounter * spanInCodons);
                 if (cmpf(value, 0.0f)) isZero++;
                 if (value < 0.0f) isNegative++;
