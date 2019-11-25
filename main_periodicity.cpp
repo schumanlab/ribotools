@@ -9,12 +9,35 @@
 
 
 struct Offset {
-    uint32_t readLength;
-    uint32_t fpSite;
-    uint32_t tpSite;
+    int32_t span, fp, tp;
+
+    bool operator==(const Offset &qry) const {
+        return (span == qry.span) && (fp == qry.fp) && (tp == qry.tp);
+    }
+
+    bool operator<(const Offset &qry) const {
+        return (span < qry.span) || (fp < qry.fp) || (tp < qry.tp);
+    }
 };
 
-void calculatePSiteOffset(std::map<Offset, uint32_t> &poMap, BedIO &hBed, BamIO &hBam);
+void calculatePSiteOffset(std::map<Offset, uint32_t> &posMap, BedIO &hBed, BamIO &hBam){
+
+    while (hBed.next()) {
+
+        hBam.query(hBed.bed().name(1), hBed.bed().orfStart(), hBed.bed().orfStart() + 1);
+        while (hBam.next()) {
+            int32_t readStart = hBam.readStart();
+            int32_t readEnd = hBam.readEnd();
+            int32_t readLength = hBam.readLength();
+
+            Offset key = {readLength, hBed.bed().orfStart() - readStart, readEnd - hBed.bed().orfStart()};
+
+            posMap[key]++;
+            //std::cout << hBed.bed().name(2) << "\t" << readStart << "\t" << readEnd << "\t" << hBed.bed().orfStart() << std::endl;
+        }
+
+    }
+}
 
 
 int main_periodicity(int argc, const char *argv[])
@@ -58,22 +81,13 @@ int main_periodicity(int argc, const char *argv[])
 
     calculatePSiteOffset(map_pSiteOffset, hBed, hBam);
 
+    for (auto const &[key, value] : map_pSiteOffset) {
+        std::cout << key.span << "::" << key.fp << "-" << key.tp << "\t" << value << std::endl;
+    }
+
 
     return 0;
 }
 
 
-void calculatePSiteOffset(std::map<Offset, uint32_t> &poMap, BedIO &hBed, BamIO &hBam)
-{
 
-    while (hBed.next()) {
-
-        hBam.query(hBed.bed().name(), hBed.bed().orfStart(), hBed.bed().orfStart() + 1);
-        while (hBam.next()) {
-            int32_t readStart = hBam.readStart();
-            int32_t readLength = hBam.readLength();
-            std::cout << hBed.bed().name(2) << "\t" << readStart << "\t" << readLength << "\t" << hBed.bed().orfStart() << std::endl;
-        }
-
-    }
-}

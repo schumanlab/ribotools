@@ -34,6 +34,7 @@ std::vector<float> reduceToCodons(const std::vector<int> &nucleotides) {
 }
 
 
+
 void calculatePauseScore(std::vector<float>::iterator ov,
                                        std::vector<float>::iterator ovEnd,
                                        const std::vector<float> &coverage,
@@ -97,6 +98,57 @@ void calculatePauseScore(std::vector<float>::iterator ov,
 }
 
 
+void calculatePauseScore(std::vector<float>::iterator ov,
+                         std::vector<float>::iterator ovEnd,
+                         const std::vector<float> &coverage,
+                         int window = 11) {
+
+    // window is  odd -> centered around current position
+    // window is even -> centered around current and previous position
+    int windowPrev = window / 2;
+    int windowNext = windowPrev;
+    if (window % 2 == 0)
+        windowNext -= 1;
+
+    std::vector<float>::const_iterator ivPrev = coverage.begin();
+    std::vector<float>::const_iterator ivNext = coverage.begin() + windowNext;
+
+    // intialize sum
+    float windowSum = 0.0f;
+    for (std::vector<float>::const_iterator iv = ivPrev; iv != (ivNext + 1); ++iv)
+        windowSum += *iv;
+
+    for (std::vector<float>::const_iterator iv = coverage.begin();
+         iv != coverage.end(); ++iv) {
+
+        // assign output
+        if (ov != ovEnd) {
+            float background = windowSum / (ivNext - ivPrev + 1); // sliding window average
+            *ov = (background > 0.0f) ? (*iv - background) / std::sqrt(background) : 0.0f;
+        }
+        ++ov;
+
+        // update next step
+        if (ivNext != coverage.end() - 1) {
+            ++ivNext;
+            windowSum += *ivNext;
+        }
+
+        // update previous step
+        if ((iv - ivPrev) == windowPrev) {
+            windowSum -= *ivPrev;
+            ++ivPrev;
+        }
+
+
+    }
+
+
+}
+
+
+
+
 int main_pausing(const int argc, const char *argv[])
 {
     std::string fileBed;
@@ -109,7 +161,7 @@ int main_pausing(const int argc, const char *argv[])
 
     auto p = ArgumentParser("pausing", std::string(VERSION), "calculates z-score pausing score per codon");
     p.addArgumentRequired("annotation").setKeyShort("-a").setKeyLong("--bed").setHelp("BED file containing transcript annotation");
-    p.addArgumentRequired("sequence").setKeyShort("-f").setKeyLong("--fasta").setHelp("FASTA file containing transcript sequence");
+    //p.addArgumentRequired("sequence").setKeyShort("-f").setKeyLong("--fasta").setHelp("FASTA file containing transcript sequence");
     p.addArgumentOptional("basic").setKeyShort("-b").setKeyLong("--basic").setDefaultValue<int>(150).setHelp("number of codons to calculate background score");
     p.addArgumentOptional("flank").setKeyShort("-f").setKeyLong("--flank").setDefaultValue<int>(5).setHelp("number of flanking codons to calculate background score");
     p.addArgumentOptional("skip").setKeyShort("-s").setKeyLong("--skip").setDefaultValue<int>(10).setHelp("number of codons to skip after/before start/stop codon");
@@ -120,7 +172,7 @@ int main_pausing(const int argc, const char *argv[])
     try {
         p.parse(argc, argv);
         fileBed = p.get<std::string>("annotation");
-        fileFasta = p.get<std::string>("sequence");
+        //fileFasta = p.get<std::string>("sequence");
         backgroundWindow_basic = p.get<int>("basic");
         backgroundWindow_flank = p.get<int>("flank");
         skipCodons = p.get<int>("skip");
@@ -138,11 +190,13 @@ int main_pausing(const int argc, const char *argv[])
         return EXIT_FAILURE;
     }
 
+    /*
     auto hFas = SeqIO(fileFasta);
     if (!hFas.isOpen()) {
         std::cerr << "ribotools::" + hFas.error() << std::endl;
         return EXIT_FAILURE;
     }
+    */
 
     std::vector<std::shared_ptr<BamIO>> hBams;
     for (auto fileName : filesBam) {
@@ -161,7 +215,6 @@ int main_pausing(const int argc, const char *argv[])
         std::cout << "\t" << handle->name();
     std::cout << std::endl;
 
-
     while (hBed.next()) {
 
 
@@ -173,6 +226,8 @@ int main_pausing(const int argc, const char *argv[])
         int spanInCodons = hBed.bed().orfSpan() / 3;
         std::vector<float> pauseScore(static_cast<std::size_t>(spanInCodons) * hBams.size(), 0.0f); // buffer container
 
+        bool useFlag = false;
+
         for (auto handle : hBams) {
 
             // count reads
@@ -180,6 +235,9 @@ int main_pausing(const int argc, const char *argv[])
             int readCount = handle->count();
             float readsPerCodon = static_cast<float>(readCount) / spanInCodons;
             if (readsPerCodon > 0.1f) {
+
+                // activate usage
+                useFlag = true;
 
                 // depth
                 std::vector<int> orfDepth = handle->depth(hBed.bed().name(1), hBed.bed().orfStart(), hBed.bed().orfEnd());
@@ -190,13 +248,25 @@ int main_pausing(const int argc, const char *argv[])
                 // calculate pause score
                 std::vector<float>::iterator itBegin = pauseScore.begin() + spanInCodons * handleCounter;
                 std::vector<float>::iterator itEnd = pauseScore.begin() + spanInCodons * (handleCounter + 1);
-                calculatePauseScore(itBegin, itEnd, orfCodons, backgroundWindow_basic, backgroundWindow_flank);
+                //calculatePauseScore(itBegin, itEnd, orfCodons);
+                for (std::vector<float>::const_iterator iv = orfCodons.begin(); iv != orfCodons.end(); ++iv) {
+                    if (itBegin != itEnd)
+                        *itBegin = *iv;
+                    ++itBegin;
+                }
+
 
             }
 
             handleCounter++;
         }
 
+
+        //for(std::vector<float>::const_iterator iv = pauseScore.begin();
+        //    iv != pauseScore.end(); ++iv)
+        //    std::cout << *iv << std::endl;
+
+        if (!useFlag) continue;
 
         // output matrix
         std::vector<float>::iterator it = pauseScore.begin();
@@ -228,9 +298,10 @@ int main_pausing(const int argc, const char *argv[])
             outBuffer << std::endl;
             ++it;
 
-            if ((isNegative < handleCounter/2) && (isZero < handleCounter/2))
+            //if ((isNegative < handleCounter/2) && (isZero < handleCounter/2))
                 std::cout << outBuffer.str();
         }
+
 
 
         // retrieve ORF sequence

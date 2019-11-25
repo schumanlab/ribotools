@@ -21,11 +21,13 @@ public:
 
     uint8_t mapq() const {return m_mapq;}
     void setMapQ(uint8_t value) {m_mapq = value;}
+
     int32_t readLength() const {
         const uint8_t *p_cigar = m_alignment->data + m_alignment->core.l_qname;
         return bam_cigar2qlen(static_cast<int>(m_alignment->core.n_cigar), reinterpret_cast<const uint32_t *>(p_cigar));
     }
     int32_t readStart() const {return m_alignment->core.pos;}
+    int32_t readEnd() const {return m_alignment->core.pos + (m_alignment->core.n_cigar ? bam_cigar2rlen(m_alignment->core.n_cigar, bam_get_cigar(m_alignment)) : 1);}
     void setReadLength(uint16_t value) {m_readLength = value;}
     int32_t count();
     bool query(const std::string &queryChrom, int queryStart, int queryEnd);
