@@ -1,12 +1,88 @@
 #ifndef BAMIO_H
 #define BAMIO_H
 
-#include <iostream>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include <htslib/hts.h>
 #include <htslib/sam.h>
+
+class BamAuxiliary
+{
+public:
+    explicit BamAuxiliary(const std::string &fileBam, int mapq = 0, int minlen = 0);
+    ~BamAuxiliary();
+
+    bool isOpen() const;
+    const std::string name() const;
+    const std::string what() const;
+    bool next();
+    bool query(const std::string &queryChrom, int queryStart, int queryEnd);
+    int count();
+    int readStart() const;
+    int readEnd() const;
+    int readLength() const;
+    std::vector<int> depth(const std::string &queryChrom, int queryStart, int queryEnd);
+
+private:
+
+    struct bam_aux_t {
+        htsFile *fp;
+        bam_hdr_t *hdr;
+        hts_idx_t *idx;
+        hts_itr_t *iter;
+        int min_mapQ, min_len;
+    };
+
+    bam_aux_t m_aux;
+    bam1_t *m_bam;
+    std::string m_name;
+    std::string m_error;
+
+    static int read_bam(void *data, bam1_t *b);
+};
+
+
+class BamIO
+{
+public:
+    explicit BamIO(const std::string &fileBam, int mapq = 0, int minlen = 0) {
+        std::vector<std::string> files;
+        files.push_back(fileBam);
+        BamIO(files, mapq, minlen);
+    }
+
+    explicit BamIO(const std::vector<std::string> &filesBam, int mapq = 0, int minlen = 0) :
+        m_isOpen(true),
+        m_error("")
+    {
+        for (auto fileName : filesBam) {
+            auto handle = std::make_shared<BamAuxiliary>(fileName, mapq, minlen);
+            if (!handle->isOpen()) {
+                m_isOpen = false;
+                m_error = handle->what();
+                return;
+            }
+            aux.emplace_back(handle);
+        }
+
+    }
+
+
+    bool isOpen() const {return m_isOpen;}
+    const std::string what() const {return m_error;}
+
+    std::vector<std::shared_ptr<BamAuxiliary>> aux;
+
+private:
+    bool m_isOpen;
+    std::string m_error;
+};
+
+
+
+/*
 
 class BamIO
 {
@@ -47,32 +123,15 @@ private:
     bam1_t *m_alignment;
 
 
-    struct mplp_aux_t {
-        htsFile *fp;
-        bam_hdr_t *hdr;
-        hts_itr_t *iter;
-        int min_mapQ, min_len;
-    };
 
 
-    static int read_bam(void *data, bam1_t *b) {
-        mplp_aux_t *aux = static_cast<mplp_aux_t*>(data);
-        int ret;
-        while (1) {
-            ret = aux->iter ? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b);
-            if ( ret<0 ) break;
-            if ( b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL | BAM_FDUP) ) continue;
-            if ( static_cast<int>(b->core.qual) < aux->min_mapQ ) continue;
-            //if ( aux->min_len && bam_cigar2qlen(b->core.n_cigar, bam_get_cigar(b)) < aux->min_len ) continue; // filter based on read length
-            break;
-        }
-        return ret;
-    }
+
+
 
 };
 
 
 
-
+*/
 
 #endif // BAMIO_H

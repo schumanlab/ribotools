@@ -1,84 +1,62 @@
 #include "bamio.h"
 
-BamIO::BamIO() :
-    m_mapq(0),
-    m_readLength(0),
-    m_name(""),
-    m_handleBam(nullptr),
-    m_handleBai(nullptr),
-    m_handleHeader(nullptr),
-    m_handleIterator(nullptr),
-    m_alignment(nullptr)
-{}
-
-BamIO::BamIO(const std::string &fileName, uint8_t _mapq, uint16_t _readLength) :
-    m_mapq(0),
-    m_readLength(0),
-    m_name(""),
-    m_handleBam(nullptr),
-    m_handleBai(nullptr),
-    m_handleHeader(nullptr),
-    m_handleIterator(nullptr),
-    m_alignment(nullptr)
+BamAuxiliary::BamAuxiliary(const std::string &fileBam, int mapq, int minlen) :
+    m_name(fileBam),
+    m_error("")
 {
-    open(fileName, _mapq, _readLength);
-}
-
-BamIO::~BamIO() {
-    if (m_alignment)
-        bam_destroy1(m_alignment);
-
-    if (m_handleIterator)
-        bam_itr_destroy(m_handleIterator);
-
-    if (m_handleHeader)
-        bam_hdr_destroy(m_handleHeader);
-
-    if (m_handleBai)
-        hts_idx_destroy(m_handleBai);
-
-    if (m_handleBam)
-        hts_close(m_handleBam);
-}
-
-bool BamIO::isOpen() const {
-    return (m_handleBam && m_handleBai && m_handleHeader && m_alignment);
-}
-
-bool BamIO::open(const std::string &fileName, uint8_t _mapq, uint16_t _readLength) {
-
-    m_handleBam = hts_open(fileName.c_str(), "r");
-    if (!m_handleBam) {
-        m_error = "BamIO::error, failed to open BAM file " + fileName;
-        return false;
+    // open HTS file
+    m_aux.fp = hts_open(fileBam.c_str(), "r");
+    if (!m_aux.fp) {
+        m_error = "BamAuxiliary::error, failed to open BAM file " + fileBam;
+        return;
     }
 
-    m_handleBai = hts_idx_load(fileName.c_str(), HTS_FMT_BAI);
-    if (!m_handleBai) {
-        m_error = "BamIO::error, failed to laod BAI index " + fileName + ".bai";
-        return false;
+    // load HTS index
+    m_aux.idx = hts_idx_load(fileBam.c_str(), HTS_FMT_BAI);
+    if (!m_aux.idx) {
+        m_error = "BamAuxiliary::error, failed to laod BAI index " + fileBam + ".bai";
+        return;
     }
 
-    m_handleHeader = sam_hdr_read(m_handleBam);
-    if (!m_handleHeader) {
-        m_error = "BamIO::error, failed to parse BAM header";
-        return false;
+    // load SAM header
+    m_aux.hdr = sam_hdr_read(m_aux.fp);
+    if (!m_aux.hdr) {
+        m_error = "BamAuxiliary::error, failed to parse BAM header";
+        return;
     }
 
-    m_alignment = bam_init1();
-    if (!m_alignment) {
-        m_error = "BamIO::error, failed to allocate alignment memory";
-        return false;
+    // alocate BAM record
+    m_bam = bam_init1();
+    if (!m_bam) {
+        m_error = "BamAuxiliary::error, failed to allocate alignment memory";
+        return;
     }
 
-    setMapQ(_mapq);
-    setReadLength(_readLength);
-    m_name = fileName;
-
-    return true;
+    // set defaults
+    m_aux.min_mapQ = mapq;
+    m_aux.min_len = minlen;
 }
 
-const std::string BamIO::name() const {
+BamAuxiliary::~BamAuxiliary() {
+    if (m_bam)
+        bam_destroy1(m_bam);
+
+    if (m_aux.iter)
+        bam_itr_destroy(m_aux.iter);
+
+    if (m_aux.hdr)
+        bam_hdr_destroy(m_aux.hdr);
+
+    if (m_aux.idx)
+        hts_idx_destroy(m_aux.idx);
+
+    if (m_aux.fp)
+        hts_close(m_aux.fp);
+}
+
+bool BamAuxiliary::isOpen() const { return m_error.empty();}
+
+const std::string BamAuxiliary::name() const {
     std::string tag = m_name;
 
     // remove path
@@ -94,100 +72,96 @@ const std::string BamIO::name() const {
     return tag;
 }
 
+const std::string BamAuxiliary::what() const {return m_error;}
 
-int32_t BamIO::count() {
-    int32_t counter = 0;
-    // read bam file record by record
+bool BamAuxiliary::next() {return read_bam(&m_aux, m_bam) > 0;}
+
+bool BamAuxiliary::query(const std::string &queryChrom, int queryStart, int queryEnd) {
+    int queryTid = bam_name2id(m_aux.hdr, queryChrom.c_str());
+    m_aux.iter = bam_itr_queryi(m_aux.idx, queryTid, queryStart, queryEnd);
+    return (m_aux.iter != nullptr);
+}
+
+int BamAuxiliary::count() {
+    int counter = 0;
     while (next())
         counter++;
     return counter;
 }
 
-bool BamIO::query(const std::string &queryChrom, int queryStart, int queryEnd) {
-    int queryTid = bam_name2id(m_handleHeader, queryChrom.c_str());
-    m_handleIterator = bam_itr_queryi(m_handleBai, queryTid, queryStart, queryEnd);
-    return (m_handleIterator == nullptr);
+int BamAuxiliary::readStart() const {return m_bam ? m_bam->core.pos : 0;}
+
+int BamAuxiliary::readEnd() const {return m_bam ?
+                m_bam->core.pos +
+                (m_bam->core.n_cigar ?
+                     bam_cigar2rlen(m_bam->core.n_cigar, bam_get_cigar(m_bam)) : 1) : 0;}
+
+int BamAuxiliary::readLength() const {
+    if (!m_bam)
+        return 0;
+    const uint8_t *p_cigar = m_bam->data + m_bam->core.l_qname;
+    return bam_cigar2qlen(static_cast<int>(m_bam->core.n_cigar), reinterpret_cast<const uint32_t *>(p_cigar));
 }
 
-bool BamIO::next() {
-    int ret = -1;
-    while (1) {
+std::vector<int> BamAuxiliary::depth(const std::string &queryChrom, int queryStart, int queryEnd) {
+    std::vector<int> cov;
 
-        // read next iterator or next sam line
-        ret = m_handleIterator ?
-                    sam_itr_next(m_handleBam, m_handleIterator, m_alignment) :
-                    sam_read1(m_handleBam, m_handleHeader, m_alignment);
+    // check query range
+    if (queryEnd <= queryStart)
+        return cov;
 
-        // invalid record
-        if ( ret < 0) break;
+    // check if region exists
+    if (!query(queryChrom, queryStart, queryEnd))
+        return cov;
 
-        // skip special
-        if ( m_alignment->core.flag & (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL | BAM_FDUP) ) continue;
+    // resize vector
+    cov.resize(static_cast<std::size_t>(queryEnd - queryStart));
 
-        // filter by maping quality
-        if (m_mapq > 0) {
-            if ( static_cast<uint8_t>(m_alignment->core.qual) < m_mapq ) continue;
-        }
-
-        // filter by minimum read length
-        if (m_readLength > 0) {
-            const uint8_t *p_cigar = m_alignment->data + m_alignment->core.l_qname;
-            if (bam_cigar2qlen(static_cast<int>(m_alignment->core.n_cigar), reinterpret_cast<const uint32_t *>(p_cigar)) < m_readLength) continue;
-        }
-
-        // successful read
-        break;
-    }
-    return ret > 0;
-}
-
-std::vector<int> BamIO::depth(const std::string &queryChrom, int queryStart, int queryEnd) {
-
-    std::vector<int> depth(static_cast<std::size_t>(queryEnd - queryStart), 0);
-    std::vector<int>::iterator it = depth.begin();
-
-    query(queryChrom, queryStart, queryEnd);
-
-    mplp_aux_t data;
-    mplp_aux_t *p_data = &data;
-    void *v_data = p_data;
-    p_data->fp = m_handleBam;
-    p_data->hdr = m_handleHeader;
-    p_data->iter = m_handleIterator;
-    p_data->min_mapQ = m_mapq;
-    p_data->min_len = m_readLength;
-
-
-    bam_mplp_t mplp = bam_mplp_init(1, read_bam,  &v_data);
-    bam_mplp_set_maxcnt(mplp, INT_MAX);
-
+    // pileup algorithm htslib
+    bam_aux_t *p_aux = &m_aux;
+    void *v_aux = p_aux;
     bam_pileup1_t plp;
     const bam_pileup1_t *p_plp = &plp;
-    const bam_pileup1_t **pp_plp = &p_plp;
+    int ret, tid, pos, n_plp = 0;
+    std::vector<int>::iterator ov = cov.begin();
 
-    int ret, tid, pos, n_plp;
+    bam_mplp_t mplp = bam_mplp_init(1, read_bam, &v_aux);
+    bam_mplp_set_maxcnt(mplp, INT_MAX);
 
+    while ((ret = bam_mplp_auto(mplp, &tid, &pos, &n_plp, &p_plp)) > 0) {
 
-    while ((ret=bam_mplp_auto(mplp, &tid, &pos, &n_plp, pp_plp)) > 0) {
-
+        // filter position by range
         if ((pos < queryStart) || (queryEnd <= pos)) continue;
 
+        // filter piled reads by alignment quality and read length
         int m = 0;
         for (int j = 0; j < n_plp; ++j) {
             const bam_pileup1_t *p = p_plp + j;
             if (p->is_del || p->is_refskip) ++m;
-            else if (p->qpos < p->b->core.l_qseq && bam_get_qual(p->b)[p->qpos] < data.min_mapQ) ++m;
+            else if (p->qpos < p->b->core.l_qseq && bam_get_qual(p->b)[p->qpos] < m_aux.min_mapQ) ++m;
         }
 
-
-        it = depth.begin() + pos - queryStart;
-        if (it < depth.end())
-            *it = n_plp - m;
+        // update coverage
+        ov = cov.begin() + pos - queryStart;
+        if (ov < cov.end())
+            *ov = n_plp - m;
     }
 
     bam_mplp_destroy(mplp);
 
-    return depth;
+    return cov;
 }
 
-
+int BamAuxiliary::read_bam(void *data, bam1_t *b) {
+    bam_aux_t *aux = static_cast<bam_aux_t*>(data);
+    int ret;
+    while (1) {
+        ret = aux->iter ? sam_itr_next(aux->fp, aux->iter, b) : sam_read1(aux->fp, aux->hdr, b);
+        if ( ret<0 ) break;
+        if ( b->core.flag & (BAM_FUNMAP | BAM_FSECONDARY | BAM_FQCFAIL | BAM_FDUP) ) continue;
+        if ( static_cast<int>(b->core.qual) < aux->min_mapQ ) continue;
+        if ( aux->min_len && bam_cigar2qlen(b->core.n_cigar, bam_get_cigar(b)) < aux->min_len ) continue; // filter based on read length
+        break;
+    }
+    return ret;
+}
