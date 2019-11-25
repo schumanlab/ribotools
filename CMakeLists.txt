@@ -28,6 +28,7 @@ set(SOURCE
     main_codonfreq.cpp
     main_codonrate.cpp
     main_count.cpp
+    main_depth.cpp
     main_features.cpp
     main_gcratio.cpp
     main_gcref.cpp

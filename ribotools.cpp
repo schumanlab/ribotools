@@ -6,6 +6,7 @@ int main_cai(const int argc, const char *argv[]);
 int main_codonfreq(const int argc, const char *argv[]);
 int main_codonrate(const int argc, const char *argv[]);
 int main_count(const int argc, const char *argv[]);
+int main_depth(const int argc, const char *argv[]);
 int main_features(const int argc, const char *argv[]);
 int main_gcratio(const int argc, const char *argv[]);
 int main_gcref(const int argc, const char *argv[]);
@@ -50,6 +51,8 @@ int main(const int argc, const char *argv[]) {
         else if (subcommand == "codonrate") return main_codonrate(argc - 1, argv + 1);
 
         else if (subcommand == "count") return main_count(argc - 1, argv + 1);
+
+        else if (subcommand == "depth") return main_depth(argc - 1, argv + 1);
 
         else if (subcommand == "features") return main_features(argc - 1, argv + 1);
 
@@ -121,6 +124,7 @@ int printUsage()
     std::cerr << "    codonfreq      calculates codon frequency per ORF" << std::endl;
     std::cerr << "    codonrate      calculates codon decoding rate" << std::endl;
     std::cerr << "    count          counts reads per ORF from BAM files" << std::endl;
+    std::cerr << "    depth          coverage per ORF from BAM files" << std::endl;
     std::cerr << "    features       counts reads per gene features from BAM and BED files" << std::endl;
     std::cerr << "    gcratio        calculates GC-ratio in reads from BAM file" << std::endl;
     std::cerr << "    gcref          calculates GC-ratio in ORF from BED and FASTA files" << std::endl;
