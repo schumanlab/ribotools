@@ -47,7 +47,10 @@ private:
 class BamIO
 {
 public:
-    explicit BamIO(const std::string &fileBam, int mapq = 0, int minlen = 0) {
+    explicit BamIO(const std::string &fileBam, int mapq = 0, int minlen = 0) :
+        m_isOpen(true),
+        m_error("")
+    {
         std::vector<std::string> files;
         files.push_back(fileBam);
         BamIO(files, mapq, minlen);
@@ -66,7 +69,6 @@ public:
             }
             aux.emplace_back(handle);
         }
-
     }
 
 

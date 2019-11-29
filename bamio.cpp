@@ -25,6 +25,9 @@ BamAuxiliary::BamAuxiliary(const std::string &fileBam, int mapq, int minlen) :
         return;
     }
 
+    // set empty iterator
+    m_aux.iter = nullptr;
+
     // alocate BAM record
     m_bam = bam_init1();
     if (!m_bam) {
