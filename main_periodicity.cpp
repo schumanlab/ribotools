@@ -1,5 +1,7 @@
 #include <iostream>
 #include <map>
+#include <algorithm>
+#include <numeric>
 
 #include "argumentparser.h"
 #include "bamio.h"
@@ -7,59 +9,38 @@
 #include "version.h"
 
 
-struct PSiteShift {
-    int32_t readLength, shiftPrev, shiftNext = 0;
+struct PSiteOffset {
+    int32_t readLength, offsetPrev, offsetNext = 0;
 };
 
-bool operator<(PSiteShift const& lhs, PSiteShift const& rhs) {
+bool operator<(PSiteOffset const& lhs, PSiteOffset const& rhs) {
         if (lhs.readLength != rhs.readLength)
             return lhs.readLength < rhs.readLength;
-        else if (lhs.shiftPrev != rhs.shiftPrev)
-            return lhs.shiftPrev < rhs.shiftPrev;
+        else if (lhs.offsetPrev != rhs.offsetPrev)
+            return lhs.offsetPrev < rhs.offsetPrev;
         else
-            return lhs.shiftNext < rhs.shiftNext;
+            return lhs.offsetNext < rhs.offsetNext;
 }
 
 
 
-struct PSiteShiftComparator {
+struct PSiteOffsetComparator {
 
     // opt into being transparent comparator
     using is_transparent = void;
 
-    bool operator() (PSiteShift const& lhs, PSiteShift const& rhs) const {
+    bool operator() (PSiteOffset const& lhs, PSiteOffset const& rhs) const {
         return lhs < rhs;
     }
 
-    bool operator() (int lhs, PSiteShift const& rhs) const {
-        return lhs < rhs.readLength;
+    bool operator() (int lhs, PSiteOffset const& rhs) const {
+        return lhs <= rhs.readLength;
     }
 
-    bool operator() (PSiteShift const& lhs, int rhs) const {
-        return lhs.readLength < rhs;
-    }
-};
-
-
-
-/*
-struct PSiteShift {
-    int32_t readLength, shiftFPrime, shiftTPrime = 0;
-
-    bool operator==(const PSiteShift &qry) const {
-        return (readLength == qry.readLength) && (shiftFPrime == qry.shiftFPrime) && (shiftTPrime == qry.shiftTPrime);
-    }
-
-    bool operator<(const PSiteShift &qry) const {
-        if (readLength != qry.readLength)
-            return readLength < qry.readLength;
-        else if (shiftFPrime != qry.shiftFPrime)
-            return shiftFPrime < qry.shiftFPrime;
-        else
-            return shiftTPrime < qry.shiftTPrime;
+    bool operator() (PSiteOffset const& lhs, int rhs) const {
+        return lhs.readLength <= rhs;
     }
 };
-*/
 
 
 int closestNumberInFrame(int n, int m = 3) {
@@ -82,7 +63,7 @@ int closestNumberInFrame(int n, int m = 3) {
 
 
 
-void calculatePSiteShift(std::map<PSiteShift, uint32_t, PSiteShiftComparator> &map_pSiteShift, BedIO &hBed, BamAuxiliary &hBam) {
+void accumulatePSiteOffset(std::map<PSiteOffset, uint32_t, PSiteOffsetComparator> &map_pSiteOffset, BedIO &hBed, BamAuxiliary &hBam) {
 
     int readCount = 0;
     int bedCount = 0;
@@ -110,16 +91,134 @@ void calculatePSiteShift(std::map<PSiteShift, uint32_t, PSiteShiftComparator> &m
                 shiftEnd -= anchorStart;
             }
 
-            PSiteShift key = {readLength, shiftStart, shiftEnd};
-            map_pSiteShift[key]++;
+            PSiteOffset key = {readLength, shiftStart, shiftEnd};
+            map_pSiteOffset[key]++;
             readCount++;
         }
+
+        bedCount++;
+        //if(bedCount == 500) break;
+    }
+
+    std::cerr << "used reads: " << readCount << std::endl;
+}
+
+
+void bestPSiteOffset(std::map<int, int> &map_pSiteBest, std::map<PSiteOffset, uint32_t, PSiteOffsetComparator> &map_pSiteOffset, bool flagPrintOffset) {
+
+    const std::vector<int> offset = {12,13,11};
+
+    if (flagPrintOffset)
+        std::cout << "#read.length\tpsite.offset\treads.frame0\treads.frame1\treads.frame2" << std::endl;
+
+    // calculate best frame per length
+    for (int l = 15; l <= 41; ++l) {
+
+        std::map<PSiteOffset, uint32_t, PSiteOffsetComparator>::const_iterator itBegin = map_pSiteOffset.upper_bound(l);
+        std::map<PSiteOffset, uint32_t, PSiteOffsetComparator>::const_iterator itEnd = map_pSiteOffset.lower_bound(l);
+
+        // skip empty lengths
+        if (itBegin == itEnd) continue;
+
+        // accumulate counts per frame
+        std::vector<int> counts(3, 0);
+        for (std::map<PSiteOffset, uint32_t>::const_iterator it = itBegin; it != itEnd; ++it) {
+            std::size_t frame = static_cast<std::size_t>(std::abs(it->first.offsetPrev) % 3);
+            if (frame < 3)
+                counts[frame] += it->second;
+        }
+
+        // best frame per length
+        auto itMax = std::max_element(counts.begin(), counts.end());
+        std::rotate(counts.begin(), itMax, counts.end());
+        int bestOffset = offset.at(static_cast<std::size_t>(itMax - counts.begin()));
+
+        map_pSiteBest[l] = bestOffset;
+
+        if (flagPrintOffset)
+            std::cout << l << "\t"
+                      << bestOffset << "\t"
+                      << counts.at(0) << "\t"
+                      << counts.at(1) << "\t"
+                      << counts.at(2)
+                      << std::endl;
+    }
+}
+
+
+void pileUpRegion(BamAuxiliary &hBam,
+                  const std::string &chrom,
+                  int chromStart,
+                  int chromEnd,
+                  const std::map<int, int> &map_pSiteBest,
+                  std::vector<int> &hist) {
+
+    hBam.query(chrom, chromStart, chromEnd);
+    while (hBam.next()) {
+
+        int32_t readLength = hBam.readLength();
+        int32_t readStart = hBam.readStart();
+
+
+        if (map_pSiteBest.find(readLength) == map_pSiteBest.end())
+            continue;
+
+        int32_t readPSite = readStart + map_pSiteBest.find(readLength)->second;
+
+        int offset = readPSite - chromStart;
+        if (offset < 0) continue;
+
+        std::size_t idx = static_cast<std::size_t>(offset);
+        if (idx < hist.size())
+            hist.at(idx)++;
+    }
+
+}
+
+
+
+void pileUpHistogram(const std::map<int, int> &map_pSiteBest,
+                     std::vector<int> &histStart,
+                     std::vector<int> &histCenter,
+                     std::vector<int> &histEnd,
+                     BedIO &hBed,
+                     BamAuxiliary &hBam) {
+
+    int bedCount = 0;
+
+    // loop over each bed record
+    while (hBed.next()) {
+
+
+        // start histogram
+        pileUpRegion(hBam,
+                     hBed.bed().name(1),
+                     hBed.bed().orfStart() - 25,
+                     hBed.bed().orfStart() + 75,
+                     map_pSiteBest,
+                     histStart);
+
+        // center histogram
+        int orfCenter = hBed.bed().orfStart() + closestNumberInFrame(hBed.bed().orfSpan() / 2);
+        pileUpRegion(hBam,
+                     hBed.bed().name(1),
+                     orfCenter - 50,
+                     orfCenter + 50,
+                     map_pSiteBest,
+                     histCenter);
+
+        // end histogram
+        pileUpRegion(hBam,
+                     hBed.bed().name(1),
+                     hBed.bed().orfEnd() - 75,
+                     hBed.bed().orfEnd() + 25,
+                     map_pSiteBest,
+                     histEnd);
 
         bedCount++;
         if(bedCount == 500) break;
     }
 
-    std::cerr << "used reads: " << readCount << std::endl;
 }
 
 
@@ -164,33 +263,23 @@ int main_periodicity(int argc, const char *argv[])
     }
 
 
-    std::map<PSiteShift, uint32_t, PSiteShiftComparator> map_pSiteShift;
-    calculatePSiteShift(map_pSiteShift, hBed, hBam);
+    std::map<PSiteOffset, uint32_t, PSiteOffsetComparator> map_pSiteOffset;
+    std::map<int, int> map_pSiteBest;
+    std::vector<int> histStart(100, 0);
+    std::vector<int> histCenter(100, 0);
+    std::vector<int> histEnd(100, 0);
 
-    // print options
-    if (flagPrintOffset) {
-        //for (const auto &[key, value] : map_pSiteShift) {
-        //    std::cout << key.readLength << "\t" << key.shiftPrev << "\t" << key.shiftNext << "\t" << value << std::endl;
-        //}
+    accumulatePSiteOffset(map_pSiteOffset, hBed, hBam);
 
-        std::map<PSiteShift, uint32_t, PSiteShiftComparator>::const_iterator itBegin = map_pSiteShift.upper_bound(28);
-        std::map<PSiteShift, uint32_t, PSiteShiftComparator>::const_iterator itEnd = map_pSiteShift.lower_bound(32);
+    bestPSiteOffset(map_pSiteBest, map_pSiteOffset, flagPrintOffset);
 
-
-        for(std::map<PSiteShift, uint32_t, PSiteShiftComparator>::const_iterator it = itBegin;
-            it != itEnd; ++it) {
-            std::cout << it->first.readLength << "\t"
-                      << it->first.shiftPrev << "\t"
-                      << it->first.shiftNext << "\t"
-                      << it->second << std::endl;
-        }
+    pileUpHistogram(map_pSiteBest, histStart, histCenter, histEnd, hBed, hBam);
 
 
-
-
-
+    std::cout << "#index\thist.start\thist.center\thist.end" << std::endl;
+    for (std::size_t i = 0; i < 100; ++i) {
+        std::cout << i << "\t" << histStart[i] << "\t" << histCenter[i] << "\t" << histEnd[i] << std::endl;
     }
-
 
     return 0;
 }
