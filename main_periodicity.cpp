@@ -97,7 +97,7 @@ void accumulatePSiteOffset(std::map<PSiteOffset, uint32_t, PSiteOffsetComparator
         }
 
         bedCount++;
-        //if(bedCount == 500) break;
+        //if(bedCount == 1000) break;
     }
 
     std::cerr << "used reads: " << readCount << std::endl;
@@ -171,6 +171,7 @@ void pileUpRegion(BamAuxiliary &hBam,
         std::size_t idx = static_cast<std::size_t>(offset);
         if (idx < hist.size())
             hist.at(idx)++;
+
     }
 
 }
@@ -186,9 +187,11 @@ void pileUpHistogram(const std::map<int, int> &map_pSiteBest,
 
     int bedCount = 0;
 
+    // rewind bed file
+    hBed.rewind();
+
     // loop over each bed record
     while (hBed.next()) {
-
 
         // start histogram
         pileUpRegion(hBam,
@@ -216,7 +219,7 @@ void pileUpHistogram(const std::map<int, int> &map_pSiteBest,
                      histEnd);
 
         bedCount++;
-        if(bedCount == 500) break;
+        //if(bedCount == 1000) break;
     }
 
 }
@@ -270,16 +273,14 @@ int main_periodicity(int argc, const char *argv[])
     std::vector<int> histEnd(100, 0);
 
     accumulatePSiteOffset(map_pSiteOffset, hBed, hBam);
-
     bestPSiteOffset(map_pSiteBest, map_pSiteOffset, flagPrintOffset);
-
     pileUpHistogram(map_pSiteBest, histStart, histCenter, histEnd, hBed, hBam);
-
 
     std::cout << "#index\thist.start\thist.center\thist.end" << std::endl;
     for (std::size_t i = 0; i < 100; ++i) {
         std::cout << i << "\t" << histStart[i] << "\t" << histCenter[i] << "\t" << histEnd[i] << std::endl;
     }
+
 
     return 0;
 }

@@ -82,6 +82,7 @@ public:
     const std::string error() const {return m_error;}
     Bed12 bed() const {return m_bed;}
     bool next();
+    void rewind();
 
 private:
     std::ifstream m_fileStream;

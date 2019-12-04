@@ -147,3 +147,8 @@ bool BedIO::next() {
 
     return isNext;
 }
+
+void BedIO::rewind() {
+    m_fileStream.clear();
+    m_fileStream.seekg(0);
+}
