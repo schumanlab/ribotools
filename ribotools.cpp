@@ -10,6 +10,7 @@ int main_depth(const int argc, const char *argv[]);
 int main_features(const int argc, const char *argv[]);
 int main_gcratio(const int argc, const char *argv[]);
 int main_gcref(const int argc, const char *argv[]);
+int main_gtftobed(const int argc, const char *argv[]);
 int main_irate(const int argc, const char *argv[]);
 int main_length(const int argc, const char *argv[]);
 int main_metagene(const int argc, const char *argv[]);
@@ -59,6 +60,8 @@ int main(const int argc, const char *argv[]) {
         else if (subcommand == "gcratio") return main_gcratio(argc - 1, argv + 1);
 
         else if (subcommand == "gcref") return main_gcref(argc - 1, argv + 1);
+
+        else if (subcommand == "gtftobed") return main_gtftobed(argc - 1, argv + 1);
 
         else if (subcommand == "irate") return main_irate(argc - 1, argv + 1);
 
@@ -128,6 +131,7 @@ int printUsage()
     std::cerr << "    features       counts reads per gene features from BAM and BED files" << std::endl;
     std::cerr << "    gcratio        calculates GC-ratio in reads from BAM file" << std::endl;
     std::cerr << "    gcref          calculates GC-ratio in ORF from BED and FASTA files" << std::endl;
+    std::cerr << "    gtftobed       converts GTF file format to BED12 file format" << std::endl;
     std::cerr << "    irate          calculates initiation rate based on BAM files from RNASeq and RiboSeq" << std::endl;
     std::cerr << "    length         calculates reads length based on CIGAR string from BAM file" << std::endl;
     std::cerr << "    metagene       project footprints to a metagene histogram" << std::endl;
