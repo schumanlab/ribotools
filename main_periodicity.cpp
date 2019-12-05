@@ -112,7 +112,7 @@ void bestPSiteOffset(std::map<int, int> &map_pSiteBest, std::map<PSiteOffset, ui
         std::cout << "#read.length\tpsite.offset\treads.frame0\treads.frame1\treads.frame2" << std::endl;
 
     // calculate best frame per length
-    for (int l = 15; l <= 41; ++l) {
+    for (int l = 1; l <= 100; ++l) {
 
         std::map<PSiteOffset, uint32_t, PSiteOffsetComparator>::const_iterator itBegin = map_pSiteOffset.upper_bound(l);
         std::map<PSiteOffset, uint32_t, PSiteOffsetComparator>::const_iterator itEnd = map_pSiteOffset.lower_bound(l);
