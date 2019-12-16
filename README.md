@@ -3,6 +3,7 @@ Analysis of Ribosome Footprints in Max-Planck Institute For Brain Research, Fran
 
 ## requirements
 C library for high-throughput sequencing data formats [HTSLib](https://github.com/samtools/htslib)
+
 C++17 compiler
 
 ## installation
